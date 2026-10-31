@@ -45,7 +45,7 @@ export type MathTag = typeof MATH_TAGS[number]
 export type Tag = HTMLTag | SVGTag | MathTag
 `
 
-const outPath = resolve('src/fabrics/dom/tags.ts')
+const outPath = resolve('src/stillflow-adapters/dom/tags.ts')
 mkdirSync(dirname(outPath), { recursive: true })
 writeFileSync(outPath, out)
 
