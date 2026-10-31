@@ -13,7 +13,7 @@ export class Factories {
     const factory = this._factories.get(type)
 
     if (factory === undefined) {
-      return this._parent?.get(type, view)
+      return this._parent?.get<T, V>(type, view)!
     }
 
     return factory(view, this)

@@ -6,6 +6,11 @@
     "name": "Saitov Denis",
     "email": "hecntv140@gmail.com"
   },
+  "scripts": {
+    "watch": "tsc --watch",
+    "build": "tsc --build",
+    "publish": "npm run build"
+  },
   "devDependencies": {
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2"

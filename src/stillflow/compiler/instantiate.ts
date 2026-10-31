@@ -4,7 +4,7 @@ import { Factories } from "../factories/factories.js"
 type Mapping = Record<string, any>
 
 export function $Instantiate<V extends Mapping>(view: V, factories: Factories): Meta {
-  const instance: Meta = {
+  const instance: Mapping & Meta = {
     ...view,
     meta: {
       ...view.meta,
