@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "name": "stillflow.engine",
+  "main": "dist/index.js",
+  "author": {
+    "name": "Saitov Denis",
+    "email": "hecntv140@gmail.com"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
