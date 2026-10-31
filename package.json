@@ -9,6 +9,7 @@
   "scripts": {
     "watch": "tsc --watch",
     "build": "tsc --build",
+    "gen:tags": "npx tsx src/stillflow.scripts/gen-tags.ts",
     "publish": "npm run build"
   },
   "devDependencies": {

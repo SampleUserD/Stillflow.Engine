@@ -1,6 +1,6 @@
 // scripts/gen-tags.ts
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
-import { resolve, dirname } from 'path'
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
 
 function extractKeys(dts: string, interfaceName: string): string[] {
   // ищем `interface Name { ... }` с балансировкой скобок
@@ -24,7 +24,7 @@ function extractKeys(dts: string, interfaceName: string): string[] {
   return [...body.matchAll(/"([^"]+)"\s*:/g)].map(m => m[1])
 }
 
-const dtsPath = resolve('node_modules\\@typescript\\typescript-win32-x64\\lib')
+const dtsPath = resolve('node_modules/@typescript/typescript-win32-x64/lib/lib.dom.d.ts')
 const dts = readFileSync(dtsPath, 'utf8')
 
 const html = extractKeys(dts, 'HTMLElementTagNameMap')
