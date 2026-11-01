@@ -36,6 +36,7 @@ export class Collection<T> {
 
     this._fenwick.add(id, 1)
     this._removed.add(id)
+    this._updated.delete(id)
   }
 
   public swap(i: number, j: number): void {
@@ -85,7 +86,7 @@ export class Collection<T> {
   }
 
   public get total_size() {
-    return this._data.length
+    return this._data.length - this._cleared
   }
 
   public get capacity() {

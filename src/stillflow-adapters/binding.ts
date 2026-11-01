@@ -1,5 +1,5 @@
 export type Binding<T, V> = {
-  create: (context: V) => T
-  update: (context: V) => void,
+  create: () => T
+  update: (context: V, root: T) => void,
   destroy: () => void
 }
