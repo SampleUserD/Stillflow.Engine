@@ -81,7 +81,7 @@ export class Collection<T> {
   }
 
   public size() {
-    return this.total_size - this._fenwick.count(this.total_size)
+    return this.total_size - this._cleared - this._fenwick.count(this.total_size - this._cleared)
   }
 
   public get total_size() {

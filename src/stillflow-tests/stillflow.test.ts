@@ -334,6 +334,14 @@ describe('Stillflow: Basic behaviour', () => {
 
         expect(collection.at(0)).toBe(4)
       })
+
+      it('Use-case:size', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.clear()
+
+        expect(collection.size()).toBe(0)
+      })
     })
   })
 })
