@@ -342,6 +342,35 @@ describe('Stillflow: Basic behaviour', () => {
 
         expect(collection.size()).toBe(0)
       })
+
+      it('Use-case:flush returns clears once', () => {
+        const collection = new Collection<string>([], 10)
+        collection.add('A')
+        collection.clear()
+        expect(collection.flush().cleares).toBe(true)
+        expect(collection.flush().cleares).toBe(false)
+      })
+
+      it('Use-case:set after clear', () => {
+        const collection = new Collection(['A'], 2)
+        collection.clear()
+        collection.add('B')
+        collection.set(0, 'C')
+        expect(collection.at(0)).toBe('C')
+      })
+
+      it('Use-case:grow keeps index consistent', () => {
+        const collection = new Collection<number>([], 2)
+
+        for (let i = 0; i < 100; i++) {
+          collection.add(i)
+        }
+
+        for (let i = 0; i < 100; i++) {
+          expect(collection.at(i)).toBe(i)
+          expect(collection.index(i)).toBe(i)
+        }
+      })
     })
   })
 })
