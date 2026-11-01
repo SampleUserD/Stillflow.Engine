@@ -11,9 +11,6 @@ const list = dom.collection<{ id: number, label: string }, { todos: Collection<{
   each() {
     return dom.div({
       props: {},
-      events: {
-        click: event => alert(1)
-      },
       children: [
         dom.span({
           children: [dom.text(context => `${context.id}. `)]

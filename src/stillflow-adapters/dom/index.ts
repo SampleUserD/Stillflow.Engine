@@ -1,6 +1,7 @@
 import { Properties } from "./properties.js"
 import { collection } from "./collection.js"
 import { HTML_TAGS } from "./tags.js"
+import { delegate } from "./delegate.js"
 import { Binding } from "../binding.js"
 import { create } from "./create.js"
 import { lens } from "./lens.js"
@@ -14,7 +15,8 @@ const dom: {
 } & {
   text: typeof text,
   lens: typeof lens,
-  collection: typeof collection
+  delegate: typeof delegate
+  collection: typeof collection,
 } = Object.create(null)
 
 for (const tag of HTML_TAGS) {
@@ -27,5 +29,6 @@ for (const tag of HTML_TAGS) {
 dom['text'] = text
 dom['lens'] = lens
 dom['collection'] = collection
+dom['delegate'] = delegate
 
 export { dom }
