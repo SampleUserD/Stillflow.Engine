@@ -294,6 +294,16 @@ describe('Stillflow: Basic behaviour', () => {
         expect(collection.capacity).toBe(3)
       })
 
+      it('Use-case:flush', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.clear()
+
+        collection.flush()
+
+        expect(collection.at(0)).toBeUndefined()
+      })
+
       it('Use-case:clear', () => {
         const collection = new Collection([1, 2, 3], 4)
 

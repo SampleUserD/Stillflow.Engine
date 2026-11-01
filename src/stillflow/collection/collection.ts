@@ -71,7 +71,6 @@ export class Collection<T> {
 
     this._updated.clear()
     this._removed.clear()
-    this._cleared = 0
 
     return { updates, removes, cleares }
   }
