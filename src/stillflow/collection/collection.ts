@@ -7,6 +7,7 @@ export class Collection<T> {
 
   private _updated = new Set<number>()
   private _removed = new Set<number>()
+  private _cleared: number = 0
 
   public constructor(private _data: T[], private _size: number) {
     this._fenwick = new Fenwick(this._size)
@@ -31,7 +32,7 @@ export class Collection<T> {
   }
 
   public remove(id: number): void {
-    if (this._fenwick.get(id)) {
+    if (this._fenwick.count(id + 1) - this._fenwick.count(id)) {
       return
     }
 
@@ -55,14 +56,28 @@ export class Collection<T> {
     }
   }
 
-  public flush() {
-    const updates = Array.from(this._updated)
-    const removes = Array.from(this._removed)
+  public at(id: number): T {
+    return this._data[id + this._cleared]
+  }
 
+  public clear(): void {
     this._updated.clear()
     this._removed.clear()
 
-    return { updates, removes }
+    this._fenwick = new Fenwick(this._size)
+    this._cleared = this.total_size
+  }
+
+  public flush() {
+    const updates = Array.from(this._updated)
+    const removes = Array.from(this._removed)
+    const cleares = this._cleared
+
+    this._updated.clear()
+    this._removed.clear()
+    this._cleared = 0
+
+    return { updates, removes, cleares }
   }
 
   public size() {
@@ -71,5 +86,9 @@ export class Collection<T> {
 
   public get total_size() {
     return this._data.length
+  }
+
+  public get capacity() {
+    return this._size
   }
 }

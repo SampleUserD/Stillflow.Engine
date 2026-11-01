@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest"
-import { State, Stillflow, operators } from "../index.js"
+import { Collection, State, Stillflow, operators } from "../index.js"
 
 describe('Stillflow: Basic behaviour', () => {
   describe('Stillflow:Commit()', () => {
@@ -7,7 +7,9 @@ describe('Stillflow: Basic behaviour', () => {
       const state = new State()
       const stillflow = new Stillflow(state)
 
-      expect(stillflow.on(() => stillflow.commit())).toThrow()
+      stillflow.on(() => stillflow.commit())
+
+      expect(stillflow.commit).toThrow()
     })
 
     it('Commit works as intented', () => {
@@ -90,7 +92,7 @@ describe('Stillflow: Basic behaviour', () => {
         const view = stillflow.compile({ x: operators.is('test') })
         const instance = stillflow.instantiate(view, factory)
 
-        expect(view.meta.instantiated).toBeTruthy()
+        expect(instance.meta.instantiated).toBeTruthy()
       })
 
       it('Stillflow:Instantiate()', () => {
@@ -197,6 +199,110 @@ describe('Stillflow: Basic behaviour', () => {
         stillflow.commit()
 
         expect(view.link.y).toBe(10)
+      })
+    })
+  })
+
+  describe('Stillflow:Collection', () => {
+    describe('Append', () => {
+      it('Use-case:basic', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.add(4)
+
+        expect(collection.at(3)).toBe(4)
+      })
+
+      it('Use-case:overflow', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.add(4)
+
+        expect(collection.at(3)).toBe(4)
+        expect(collection.capacity).toBe(6)
+      })
+    })
+
+    describe('Remove', () => {
+      it('Use-case:basic', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.remove(1)
+
+        expect(collection.index(2)).toBe(1)
+      })
+
+      it('Use-case:identical', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.remove(1)
+        collection.remove(1)
+
+        expect(collection.index(2)).toBe(1)
+      })
+    })
+
+    describe('Update', () => {
+      it('Use-case:basic', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.set(1, 4)
+
+        expect(collection.at(1)).toBe(4)
+      })
+    })
+
+    describe('Swap', () => {
+      it('Use-case:basic', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.swap(0, 2)
+
+        expect(collection.at(0)).toBe(3)
+        expect(collection.at(2)).toBe(1)
+      })
+
+      it('Use-case:identiacal', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.swap(0, 2)
+        collection.swap(0, 2)
+
+        expect(collection.at(0)).toBe(1)
+        expect(collection.at(2)).toBe(3)
+      })
+    })
+
+    describe('Clear', () => {
+      it('Use-case:basic', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.clear()
+
+        collection.add(4)
+
+        expect(collection.at(0)).toBe(4)
+      })
+
+      it('Use-case:clear', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.clear()
+
+        expect(collection.at(0)).toBeUndefined()
+      })
+
+      it('Use-case:remove', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.clear()
+
+        collection.add(4)
+        collection.add(8)
+        collection.remove(0)
+
+        expect(collection.at(1)).toBe(8)
+        expect(collection.at(collection.index(1))).toBe(4)
       })
     })
   })
