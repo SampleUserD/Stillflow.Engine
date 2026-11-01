@@ -6,6 +6,8 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "skipLibCheck": true,
+    "declaration": true,
+    "declarationDir": "./dist",
     "types": [
       "node"
     ]

@@ -16,7 +16,7 @@ export function collection<V, T>(properties: CollectionProperties<T, V>): Bindin
   let pool: HTMLElement[] = []
   let old_size = 0
 
-  const create = () => root.create()
+  const create = () => root.create(root)
 
   const update = (context: T, root: HTMLElement) => {
     const items = select(context)
@@ -32,7 +32,7 @@ export function collection<V, T>(properties: CollectionProperties<T, V>): Bindin
     }
 
     for (let index = old_size; index < items.total_size; index++) {
-      const element = pool.pop() || template_binding.create()
+      const element = pool.pop() || template_binding.create(root.childNodes[index])
 
       bindings.push(element)
 
@@ -60,7 +60,7 @@ export function collection<V, T>(properties: CollectionProperties<T, V>): Bindin
   const destroy = () => {
     pool.length = 0
     bindings.length = 0
-    root.destroy()
+    root.destroy(root)
   }
 
   return {

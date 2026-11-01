@@ -10,6 +10,10 @@ const list = dom.collection<{ id: number, label: string }, { todos: Collection<{
   select: context => context.todos,
   each() {
     return dom.div({
+      props: {},
+      events: {
+        click: event => alert(1)
+      },
       children: [
         dom.span({
           children: [dom.text(context => `${context.id}. `)]
@@ -22,7 +26,7 @@ const list = dom.collection<{ id: number, label: string }, { todos: Collection<{
   },
 })
 
-const element = list.create()
+const element = list.create(document.body)
 
 document.body.appendChild(element)
 

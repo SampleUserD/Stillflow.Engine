@@ -4,17 +4,16 @@ import { Properties } from "./properties.js"
 export function create<V, K extends keyof HTMLElementTagNameMap>(name: K, properties?: Properties<V, K>, updates?: (context: V, root: HTMLElementTagNameMap[K]) => void): Binding<HTMLElementTagNameMap[K], V> {
   properties = properties || Object.create(null)
 
-  let { events, children, props } = properties!
+  let { children, props } = properties!
 
   props = props || {}
-  events = events || {}
   children = children || []
 
   const style = props.style || {}
   const element = document.createElement(name)
 
   for (const child of children) {
-    element.appendChild(child.create())
+    element.appendChild(child.create(element))
   }
 
   const apply_properties = (root: HTMLElementTagNameMap[K]) => {
@@ -29,19 +28,11 @@ export function create<V, K extends keyof HTMLElementTagNameMap>(name: K, proper
     }
   }
 
-  const apply_events = (root: HTMLElementTagNameMap[K]) => {
-    for (const event in events) {
-      root.addEventListener(event, (events as any)[event])
-    }
-  }
-
   apply_properties(element)
   apply_styles(element)
 
   const create = () => {
     const root = element.cloneNode(true) as HTMLElementTagNameMap[K]
-
-    apply_events(root)
 
     return root
   }
@@ -54,9 +45,9 @@ export function create<V, K extends keyof HTMLElementTagNameMap>(name: K, proper
     }
   }
 
-  const destroy = () => {
-    for (const child of children) {
-      child.destroy()
+  const destroy = (root: HTMLElementTagNameMap[K]) => {
+    for (let index = 0; index < children.length; index++) {
+      children[index].destroy(root.childNodes[index])
     }
   }
 
