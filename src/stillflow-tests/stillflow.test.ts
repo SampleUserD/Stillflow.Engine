@@ -153,6 +153,51 @@ describe('Stillflow: Basic behaviour', () => {
 
         expect(instance.link.y).toHaveProperty('value', 10)
       })
+
+      it('Stillflow:Link with Stillflow:Instantiate() without mutation', () => {
+        const state = new State()
+        const stillflow = new Stillflow<{ x: number }>(state)
+        const factory = stillflow.factory()
+
+        factory.add('test', () => {
+          return { value: 10 }
+        })
+
+        const x = stillflow.variable('x')
+
+        const source = { y: operators.is('test') }
+
+        const view = stillflow.compile({
+          x: x.ref(),
+          link: operators.link(source)
+        })
+
+        const instance = stillflow.instantiate(view, factory)
+
+        expect(view.link).not.toHaveProperty('y')
+      })
+
+      it('Stillflow:Link with Stillflow:Ref()', () => {
+        const state = new State()
+        const stillflow = new Stillflow<{ x: number, y: number }>(state)
+
+        const x = stillflow.variable('x')
+        const y = stillflow.variable('y')
+
+        const source = { y: y.ref() }
+
+        const view = stillflow.compile({
+          x: x.ref(),
+          link: operators.link(source)
+        })
+
+        x.write(10)
+        y.write(10)
+
+        stillflow.commit()
+
+        expect(view.link.y).toBe(10)
+      })
     })
   })
 })
