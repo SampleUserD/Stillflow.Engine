@@ -32,7 +32,9 @@ for (let i = 0; i < 1000; i++) {
 
 collection.remove(0)
 collection.remove(13)
-collection.set(2, { id: 2, label: '1' })
+collection.set(3, { id: 2, label: '1' })
+
+collection.clear()
 
 list.update({ todos: collection }, element)
 

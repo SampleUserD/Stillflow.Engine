@@ -5,6 +5,7 @@
     "target": "esnext",
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "skipLibCheck": true,
     "types": [
       "node"
     ]

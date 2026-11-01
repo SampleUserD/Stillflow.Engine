@@ -2,9 +2,9 @@ import { Binding } from "../binding.js"
 import { Collection } from "../../index.js"
 
 type CollectionProperties<T, V> = {
-  root: Binding<HTMLElement, any>,
+  root: Binding<any, any>,
   select: (context: T) => Collection<V>,
-  each: () => Binding<HTMLElement, V>
+  each: () => Binding<any, V>
 }
 
 export function collection<V, T>(properties: CollectionProperties<T, V>): Binding<HTMLElement, T> {

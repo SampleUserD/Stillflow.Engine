@@ -2,7 +2,7 @@ import { Meta } from "../abstracts/meta.js"
 import { Factories } from "../factories/factories.js"
 
 export function $Instantiate<V extends Meta>(view: V, factories: Factories): Meta {
-  function copy(view: Meta): Meta {
+  function copy(view: Record<string, any>): Meta {
     return {
       ...view,
       meta: {
@@ -14,23 +14,23 @@ export function $Instantiate<V extends Meta>(view: V, factories: Factories): Met
     }
   }
 
-  function deepcopy(view: Meta, cache: WeakMap<Meta, Meta>): Meta {
+  function deepcopy(view: Record<string, any>, cache: WeakMap<Record<string, any>, Meta>): Meta {
     if (cache.has(view)) {
       return cache.get(view)!
     }
 
-    const instance = copy(view)
+    const instance = copy(view) as Record<string, any>
 
-    cache.set(view, instance)
+    cache.set(view, instance as Meta)
 
     for (const key in view.meta.source.links) {
       instance[key] = deepcopy(view[key], cache)
     }
 
-    return instance
+    return instance as Meta
   }
 
-  function instantiate(view: Meta, seen: Set<Meta>): void {
+  function instantiate(view: Record<string, any>, seen: Set<Record<string, any>>): void {
     if (seen.has(view) || view.meta.instantiated) {
       return
     }

@@ -4,13 +4,13 @@ import { Properties } from "./properties.js"
 export function create<V, K extends keyof HTMLElementTagNameMap>(name: K, properties?: Properties<V, K>, updates?: (context: V, root: HTMLElementTagNameMap[K]) => void): Binding<HTMLElementTagNameMap[K], V> {
   properties = properties || Object.create(null)
 
-  let { events, children, props } = properties
+  let { events, children, props } = properties!
 
-  props = props || Object.create(null)
-  events = events || Object.create(null)
+  props = props || {}
+  events = events || {}
   children = children || []
 
-  const style = props.style || Object.create(null)
+  const style = props.style || {}
   const element = document.createElement(name)
 
   for (const child of children) {
@@ -19,19 +19,19 @@ export function create<V, K extends keyof HTMLElementTagNameMap>(name: K, proper
 
   const apply_properties = (root: HTMLElementTagNameMap[K]) => {
     for (const property in props) {
-      root[property] = props[property]
+      (root as any)[property] = (props as any)[property]
     }
   }
 
   const apply_styles = (root: HTMLElementTagNameMap[K]) => {
     for (const property in style) {
-      root.style[property] = style[property]
+      (root as any).style[property] = (style as any)[property]
     }
   }
 
   const apply_events = (root: HTMLElementTagNameMap[K]) => {
     for (const event in events) {
-      root.addEventListener(event, events[event])
+      root.addEventListener(event, (events as any)[event])
     }
   }
 
