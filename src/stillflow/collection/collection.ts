@@ -17,18 +17,14 @@ export class Collection<T> {
     return id - this._fenwick.count(id)
   }
 
-  public get(id: number): T {
-    return this._data[id]
-  }
-
   public set(id: number, value: T): void {
     this._updated.add(id)
-    this._data[id] = value
+    this._data[id + this._cleared] = value
   }
 
   public mutate(id: number, mutator: (item: T) => void): void {
     this._updated.add(id)
-    mutator(this._data[id])
+    mutator(this._data[id + this._cleared])
   }
 
   public remove(id: number): void {
@@ -41,16 +37,16 @@ export class Collection<T> {
   }
 
   public swap(i: number, j: number): void {
-    const temporary = this.get(i)
+    const temporary = this.at(i)
 
-    this.set(i, this.get(j))
+    this.set(i, this.at(j))
     this.set(j, temporary)
   }
 
   public add(value: T): void {
-    const index = this._data.push(value)
+    const index = this._data.push(value) - this._cleared
 
-    if (index >= this._size) {
+    while (index >= this._size) {
       this._fenwick = this._fenwick.grow(this._size)
       this._size *= Collection.GROW
     }

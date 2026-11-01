@@ -284,6 +284,16 @@ describe('Stillflow: Basic behaviour', () => {
         expect(collection.at(0)).toBe(4)
       })
 
+      it('Use-case:capacity', () => {
+        const collection = new Collection([1, 2, 3], 3)
+
+        collection.clear()
+
+        collection.add(4)
+
+        expect(collection.capacity).toBe(3)
+      })
+
       it('Use-case:clear', () => {
         const collection = new Collection([1, 2, 3], 4)
 
@@ -303,6 +313,16 @@ describe('Stillflow: Basic behaviour', () => {
 
         expect(collection.at(1)).toBe(8)
         expect(collection.at(collection.index(1))).toBe(4)
+      })
+
+      it('Use-case:update', () => {
+        const collection = new Collection([1, 2, 3], 4)
+
+        collection.clear()
+
+        collection.set(0, 4)
+
+        expect(collection.at(0)).toBe(4)
       })
     })
   })
