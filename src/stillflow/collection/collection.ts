@@ -9,6 +9,8 @@ export class Collection<T> {
   private _removed = new Set<number>()
   private _cleared: number = 0
 
+  private _cleared_since_flush: boolean = false
+
   public constructor(private _data: T[], private _size: number) {
     this._fenwick = new Fenwick(this._size)
   }
@@ -62,15 +64,18 @@ export class Collection<T> {
 
     this._fenwick = new Fenwick(this._size)
     this._cleared = this.total_size
+
+    this._cleared_since_flush = true
   }
 
   public flush() {
     const updates = Array.from(this._updated)
     const removes = Array.from(this._removed)
-    const cleares = this._cleared
+    const cleares = this._cleared_since_flush
 
     this._updated.clear()
     this._removed.clear()
+    this._cleared_since_flush = false
 
     return { updates, removes, cleares }
   }
