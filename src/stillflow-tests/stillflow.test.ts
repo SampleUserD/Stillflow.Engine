@@ -105,7 +105,7 @@ describe('Stillflow: Basic behaviour', () => {
         const view = stillflow.compile({ x: operators.is('test') })
         const instance = stillflow.instantiate(view, factory)
 
-        expect(instance).toHaveProperty('value', 10)
+        expect(instance.x).toHaveProperty('value', 10)
       })
     })
 

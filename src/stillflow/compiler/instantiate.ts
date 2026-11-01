@@ -36,5 +36,7 @@ export function $Instantiate<V extends Meta>(view: V, factories: Factories): Met
 
   instantiate(instance, new Set())
 
+  view.meta.instantiated = true
+
   return instance
 }
