@@ -32,7 +32,7 @@ export function collection<V, T>(properties: CollectionProperties<T, V>): Bindin
     }
 
     for (let index = old_size; index < items.total_size; index++) {
-      const element = pool.pop() || template_binding.create(root.childNodes[index])
+      const element = pool.pop() || template_binding.create(root.childNodes[index]).cloneNode(true)
 
       bindings.push(element)
 

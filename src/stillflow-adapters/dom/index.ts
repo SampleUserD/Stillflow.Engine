@@ -28,7 +28,7 @@ for (const tag of HTML_TAGS) {
 
 dom['text'] = text
 dom['lens'] = lens
-dom['collection'] = collection
 dom['delegate'] = delegate
+dom['collection'] = collection
 
 export { dom }
