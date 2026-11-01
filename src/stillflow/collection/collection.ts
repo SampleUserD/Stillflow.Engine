@@ -64,7 +64,7 @@ export class Collection<T> {
     this._removed.clear()
 
     this._fenwick = new Fenwick(this._size)
-    this._cleared = this.total_size
+    this._cleared = this._data.length
 
     this._cleared_since_flush = true
   }
