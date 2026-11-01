@@ -1,11 +1,27 @@
 import { Stillflow, State, operators, Collection } from "../index.js"
+import { dom } from "../stillflow-adapters/dom/index.js"
 
 const state = new State()
 const stillflow = new Stillflow<{ x: number }>(state)
 
-const collection = new Collection([1, 2, 3], 3)
+const div = dom.div<{ y: { x: number } }>({
+  props: {
+    style: {
+      background: 'red'
+    }
+  },
+  children: [
+    dom.lens(
+      dom.text((ctx: { x: number }) => String(ctx.x)),
+      context => context.y
+    )
+  ]
+}, (root, context) => {
+  if (context.y.x === 10) {
+    root.style.background = 'green'
+  }
+})
 
-collection.remove(1)
-collection.remove(1)
+document.body.appendChild(div.create({ y: { x: 10 } }))
 
-console.log(collection.index(2))
+div.update({ y: { x: 10 } })
