@@ -4,19 +4,21 @@ const state = new State()
 const stillflow = new Stillflow<{ x: number }>(state)
 const factory = stillflow.factory()
 
-factory.add('test', () => {
-  return { value: 10 }
+factory.add('parent', view => {
+  return {
+    child: view
+  }
 })
 
-const x = stillflow.variable('x')
+const source = {
+  x: operators.is('parent')
+}
 
-const source = { y: operators.is('test') }
-
-const view = stillflow.compile({
-  x: x.ref(),
+const linked_source = {
   link: operators.link(source)
-})
+}
 
-const instance = stillflow.instantiate(view, factory)
+const data = stillflow.compile(source)
+const behaviour = stillflow.instantiate(data, factory)
 
-console.log(view, instance)
+console.log(behaviour)

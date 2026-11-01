@@ -30,21 +30,27 @@ export function $Instantiate<V extends Meta>(view: V, factories: Factories): Met
     return instance
   }
 
-  function instantiate(view: Meta): void {
+  function instantiate(view: Meta, seen: Set<Meta>): void {
+    if (seen.has(view) || view.meta.instantiated) {
+      return
+    }
+
+    seen.add(view)
+
     for (const key in view.meta.behaviors) {
       view[key] = factories.get(view.meta.behaviors[key], view)
     }
 
     for (const key in view.meta.source.links) {
-      instantiate(view[key])
+      instantiate(view[key], seen)
     }
+
+    view.meta.instantiated = true
   }
 
   const instance = deepcopy(view, new WeakMap())
 
-  view.meta.instantiated = true
-
-  instantiate(instance)
+  instantiate(instance, new Set())
 
   return instance
 }
