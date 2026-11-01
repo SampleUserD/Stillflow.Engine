@@ -21,24 +21,20 @@ export function $Instantiate<V extends Meta>(view: V, factories: Factories): Met
 
     seen.add(view)
 
-    const instance = copy(view)
-
-    for (const key in instance.meta.behaviors) {
-      instance[key] = factories.get(instance.meta.behaviors[key], instance)
+    for (const key in view.meta.behaviors) {
+      view[key] = factories.get(view.meta.behaviors[key], view)
     }
 
-    for (const key in instance) {
-      if (key === 'meta') {
-        continue
-      }
-
-      if (typeof instance[key] === 'object') {
-        instance[key] = instantiate(instance[key], seen)
-      }
+    for (const key in view.meta.source.links) {
+      instantiate(view[key], seen)
     }
 
     view.meta.instantiated = true
   }
 
-  return instantiate(view, new Set())
+  const instance = copy(view)
+
+  instantiate(instance, new Set())
+
+  return instance
 }
