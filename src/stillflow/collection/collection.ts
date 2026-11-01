@@ -4,14 +4,12 @@ export class Collection<T> {
   private static GROW: number = 2
 
   private _fenwick: Fenwick
-  private _removes: Uint8Array
 
   private _updated = new Set<number>()
   private _removed = new Set<number>()
 
   public constructor(private _data: T[], private _size: number) {
     this._fenwick = new Fenwick(this._size)
-    this._removes = new Uint8Array(this._size)
   }
 
   public index(id: number): number {
@@ -33,13 +31,12 @@ export class Collection<T> {
   }
 
   public remove(id: number): void {
-    if (this._removes[id]) {
+    if (this._fenwick.get(id)) {
       return
     }
 
     this._fenwick.add(id, 1)
     this._removed.add(id)
-    this._removes[id] = 1
   }
 
   public swap(i: number, j: number): void {

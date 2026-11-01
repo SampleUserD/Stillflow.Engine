@@ -96,6 +96,7 @@ export function $Compile<V extends Source, T extends Mapping>(kernel: Kernel<T>,
   const ir = $CompileIR(source)
 
   view.meta = {
+    instantiated: false,
     behaviors: Object.create(null),
     source: ir
   }

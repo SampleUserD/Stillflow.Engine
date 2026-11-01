@@ -33,6 +33,10 @@ export class Stillflow<T extends Mapping = Mapping> {
     })
   }
 
+  public on(site: () => void): () => void {
+    return this._kernel.after(site)
+  }
+
   public factory() {
     return new Factories()
   }
