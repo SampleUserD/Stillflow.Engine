@@ -26,7 +26,17 @@ const element = list.create()
 
 document.body.appendChild(element)
 
-for (let i = 0; i < 10000; i++) {
+for (let i = 0; i < 1000; i++) {
+  collection.add({ id: i, label: `${i}-todo` })
+}
+
+collection.remove(0)
+collection.remove(13)
+collection.set(2, { id: 2, label: '1' })
+
+list.update({ todos: collection }, element)
+
+for (let i = 0; i < 1000; i++) {
   collection.add({ id: i, label: `${i}-todo` })
 }
 
