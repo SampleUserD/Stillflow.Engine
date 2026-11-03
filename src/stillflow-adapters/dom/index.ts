@@ -1,34 +1,28 @@
-import { Properties } from "./properties.js"
-import { collection } from "./collection.js"
 import { HTML_TAGS } from "./tags.js"
-import { delegate } from "./delegate.js"
-import { Binding } from "../binding.js"
-import { create } from "./create.js"
-import { lens } from "./lens.js"
-import { text } from "./text.js"
+import { describe } from "./description/describe.js"
+import { AnyDOM, DOM } from "./dom.js"
+import { Properties } from "./properties/properties.js"
+import { transform } from "./compiler/transform.js"
+import { compile } from "./compiler/compile.js"
+import { apply } from "./compiler/apply.js"
 
-const dom: {
-  [K in keyof HTMLElementTagNameMap]: <V>(
-    properties: Properties<V, K>,
-    update?: (context: V, root: HTMLElementTagNameMap[K]) => void
-  ) => Binding<HTMLElementTagNameMap[K], V>
+type Descriptions = {
+  [K in keyof HTMLElementTagNameMap]: <V>(p: Omit<Properties<V, K>, 'name'>, c?: AnyDOM<V>[]) => DOM<V, K>
 } & {
-  text: typeof text,
-  lens: typeof lens,
-  delegate: typeof delegate
-  collection: typeof collection,
-} = Object.create(null)
-
-for (const tag of HTML_TAGS) {
-  (dom as any)[tag] = <V>(
-    properties: Properties<V, typeof tag>,
-    updates?: (context: V, root: HTMLElementTagNameMap[typeof tag]) => void
-  ) => create(tag, properties, updates)
+  transform: typeof transform,
+  compile: typeof compile,
+  apply: typeof apply
 }
 
-dom['text'] = text
-dom['lens'] = lens
-dom['delegate'] = delegate
-dom['collection'] = collection
+const dom: Descriptions = {} as Descriptions
+
+for (const tag of HTML_TAGS) {
+  (dom as any)[tag] = <V>(p: Omit<Properties<V, typeof tag>, 'name'>, c: AnyDOM<V>[] = []) => describe({ ...p, name: tag }, c)
+}
+
+dom['transform'] = transform
+dom['compile'] = compile
+dom['apply'] = apply
 
 export { dom }
+

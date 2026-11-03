@@ -5,6 +5,7 @@ export class Collection<T> {
 
   private _fenwick: Fenwick
 
+  private _added = new Set<T>()
   private _updated = new Set<number>()
   private _removed = new Set<number>()
   private _cleared: number = 0
@@ -49,6 +50,8 @@ export class Collection<T> {
   public add(value: T): void {
     const index = this._data.push(value) - this._cleared
 
+    this._added.add(value)
+
     while (index >= this._size) {
       this._fenwick = this._fenwick.grow(this._size)
       this._size *= Collection.GROW
@@ -60,29 +63,32 @@ export class Collection<T> {
   }
 
   public clear(): void {
+    this._added.clear()
     this._updated.clear()
     this._removed.clear()
 
-    this._fenwick = new Fenwick(this._size)
     this._cleared = this._data.length
 
     this._cleared_since_flush = true
   }
 
   public flush() {
+    const addes = Array.from(this._added)
     const updates = Array.from(this._updated)
     const removes = Array.from(this._removed)
     const cleares = this._cleared_since_flush
+    const replaces = cleares && this._added.size > 0
 
+    this._added.clear()
     this._updated.clear()
     this._removed.clear()
     this._cleared_since_flush = false
 
-    return { updates, removes, cleares }
+    return { addes, updates, removes, cleares, replaces }
   }
 
   public size() {
-    return this.total_size - this._cleared - this._fenwick.count(this.total_size - this._cleared)
+    return this.total_size - this._fenwick.count(this.total_size)
   }
 
   public get total_size() {
