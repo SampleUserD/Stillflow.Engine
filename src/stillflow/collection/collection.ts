@@ -5,11 +5,11 @@ export class Collection<T> {
 
   private _fenwick: Fenwick
 
-  private _added = new Set<T>()
   private _updated = new Set<number>()
   private _removed = new Set<number>()
   private _cleared: number = 0
 
+  private _added_since_flush: boolean = false
   private _cleared_since_flush: boolean = false
 
   public constructor(private _data: T[], private _size: number) {
@@ -47,12 +47,25 @@ export class Collection<T> {
     this.set(j, temporary)
   }
 
+  public join(value: T[]): void {
+    this._data = this._data.concat(value)
+
+    const index = this._data.length + value.length
+
+    this._added_since_flush = true
+
+    while (index >= this._size) {
+      this._fenwick = this._fenwick.grow(this._size)
+      this._size *= Collection.GROW
+    }
+  }
+
   public add(value: T): void {
     const index = this._data.push(value) - this._cleared
 
-    this._added.add(value)
+    this._added_since_flush = true
 
-    while (index >= this._size) {
+    if (index >= this._size) {
       this._fenwick = this._fenwick.grow(this._size)
       this._size *= Collection.GROW
     }
@@ -66,10 +79,11 @@ export class Collection<T> {
     this._data.splice(0, this._cleared)
 
     this._cleared = 0
+
+    this._fenwick = new Fenwick(this._size)
   }
 
   public clear(): void {
-    this._added.clear()
     this._updated.clear()
     this._removed.clear()
 
@@ -78,18 +92,17 @@ export class Collection<T> {
   }
 
   public flush() {
-    const addes = Array.from(this._added)
     const updates = Array.from(this._updated)
     const removes = Array.from(this._removed)
     const cleares = this._cleared_since_flush
-    const replaces = cleares && this._added.size > 0
+    const replaces = cleares && this._added_since_flush
 
-    this._added.clear()
     this._updated.clear()
     this._removed.clear()
     this._cleared_since_flush = false
+    this._added_since_flush = false
 
-    return { addes, updates, removes, cleares, replaces }
+    return { updates, removes, cleares, replaces }
   }
 
   public size() {

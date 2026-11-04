@@ -103,9 +103,12 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
   let bindings: HTMLElement[] = []
   let pool: HTMLElement[] = []
 
+  let old_size = 0
+
   return (root: HTMLElement) => {
     const target = find_element(path, root)
-    const { replaces, cleares, removes, updates, addes } = items.flush()
+    const size = items.total_size
+    const { replaces, cleares, removes, updates } = items.flush()
 
     if (replaces) {
       const items_count = items.total_size
@@ -146,18 +149,20 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
       target.innerHTML = String()
     }
 
-    if (addes.length > 0) {
+    if (size - old_size > 0) {
       const fragment = document.createDocumentFragment()
 
-      for (const item of addes) {
+      for (let index = old_size; index < size; index++) {
         const element = pool.pop() || template.cloneNode(true)
 
-        applier(element as HTMLElement, item)
+        applier(element as HTMLElement, items.at(index))
 
         bindings.push(element as HTMLElement)
 
         fragment.appendChild(element)
       }
+
+      old_size = size
 
       target.appendChild(fragment)
     }
