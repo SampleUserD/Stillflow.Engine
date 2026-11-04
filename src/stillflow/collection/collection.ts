@@ -62,13 +62,18 @@ export class Collection<T> {
     return this._data[id + this._cleared]
   }
 
+  public shrink(): void {
+    this._data.splice(0, this._cleared)
+
+    this._cleared = 0
+  }
+
   public clear(): void {
     this._added.clear()
     this._updated.clear()
     this._removed.clear()
 
     this._cleared = this._data.length
-
     this._cleared_since_flush = true
   }
 

@@ -9,7 +9,7 @@ export type Properties<Context, Tag extends keyof HTMLElementTagNameMap> = Parti
   properties: Partial<{
     [L in keyof Omit<HTMLElementTagNameMap[Tag], 'style'>]: HTMLElementTagNameMap[Tag][L]
   }>,
-  modifiers: Partial<Modifiers<Context>>,
+  modifiers: Partial<Modifiers<Context, Tag>>,
   styles: Partial<{
     [L in keyof HTMLElementTagNameMap[Tag]['style']]: HTMLElementTagNameMap[Tag]['style'][L]
   }>

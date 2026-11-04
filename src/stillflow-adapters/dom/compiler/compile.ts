@@ -17,11 +17,15 @@ export function compile<V>(root: AnyDOM<V>) {
 }
 
 function recursive_compile<V>(description: AnyDOM<V>, path: number[], instructions: Assembly<V>) {
-  let { modifiers, events } = description.properties
+  let { modifiers } = description.properties
 
   modifiers = modifiers || {}
 
   const payload: Instruction<V, keyof Modifiers<V>>[] = []
+
+  if (modifiers.properties !== undefined) {
+    payload.push({ kind: 'properties', payload: modifiers.properties })
+  }
 
   if (modifiers.text !== undefined) {
     payload.push({ kind: 'text', payload: modifiers.text })
