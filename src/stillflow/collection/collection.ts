@@ -79,16 +79,19 @@ export class Collection<T> {
     this._data.splice(0, this._cleared)
 
     this._cleared = 0
-
-    this._fenwick = new Fenwick(this._size)
   }
 
   public clear(): void {
+    for (const id of this._removed) {
+      this._fenwick.add(id, -1)
+    }
+
     this._updated.clear()
     this._removed.clear()
 
     this._cleared = this._data.length
     this._cleared_since_flush = true
+    this._added_since_flush = false
   }
 
   public flush() {
