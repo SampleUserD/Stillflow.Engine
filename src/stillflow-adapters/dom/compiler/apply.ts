@@ -187,6 +187,7 @@ function apply_events(path: number[], instruction: Instruction<any, 'events'>): 
     const element = target as any
 
     if (element.$listened) {
+      element.$context = context
       return
     }
 

@@ -1,10 +1,11 @@
 import { Collection } from "../index.js"
+import { Binding } from "./binding.js"
 import { AnyDOM, DOM } from "./dom/dom.js"
 import { Properties } from "./dom/properties/properties.js"
 import { HTML_TAGS } from "./dom/tags.js"
 import { dom } from "./index.js"
 
-type JSXProperties<V, K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style' | 'children'>
+type JSXProperties<V, K extends keyof HTMLElementTagNameMap> = Omit<Omit<HTMLElementTagNameMap[K], 'style'>, 'children'>
   & HTMLElementEventMap
   & {
     'text': string,
@@ -45,6 +46,29 @@ function map_jsx_to_dom<V, K extends keyof HTMLElementTagNameMap>(jsx: Partial<J
     modifiers: {},
     styles: jsx.styles ?? {},
     text: jsx.text ?? String()
+  }
+
+  const dynamic_content: ((context: any) => string)[] = []
+  const real_children: AnyDOM<any>[] = []
+
+  for (const child of jsx.children ?? []) {
+    if (typeof child === 'string' || typeof child === 'number') {
+      dynamic_content.push(() => child)
+    } else if (child === undefined || child === null) {
+      continue
+    } else if (typeof child === 'function') {
+      dynamic_content.push(child)
+    } else if (typeof child === 'object') {
+      real_children.push(child)
+    } else {
+      throw new Error(`JSX does not accept nodes of type '${typeof child}'`)
+    }
+  }
+
+  (jsx as any).children = real_children
+
+  if (jsx['sf-text'] === undefined && dynamic_content.length > 0) {
+    (jsx as any)['sf-text'] = (context: any) => dynamic_content.map(site => site(context)).join(String())
   }
 
   for (const key in jsx) {
