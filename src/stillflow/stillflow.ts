@@ -7,6 +7,7 @@ import { Factories } from "./factories/factories.js"
 import { Buffer } from "./kernel/buffer.js"
 import { Kernel } from "./kernel/kernel.js"
 import { Variable } from "./variable.js"
+import { Batcher } from "./tools/batcher.js"
 
 type Mapping = Record<string, any>
 
@@ -17,10 +18,11 @@ export class Stillflow<T extends Mapping = Mapping> {
 
   private _kernel: Kernel<T>
 
-  private _commiting = false
+  private _batcher: Batcher
 
   public constructor(private _state: AbstractState<T>, private _options: Options = { strategy: (site) => site() }) {
     this._kernel = new Kernel(this._state)
+    this._batcher = new Batcher(this._options.strategy)
 
     this._kernel.before(() => {
       for (const view of [...this._views]) {
@@ -69,16 +71,7 @@ export class Stillflow<T extends Mapping = Mapping> {
   }
 
   public commit(): void {
-    if (this._commiting) {
-      return
-    }
-
-    this._commiting = true
-
-    this._options.strategy(() => {
-      this._kernel.commit()
-      this._commiting = false
-    })
+    this._batcher.task(() => this._kernel.commit())
   }
 
   public variable<K extends keyof T>(path: K): Variable<T, K> {
