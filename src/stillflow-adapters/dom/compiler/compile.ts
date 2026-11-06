@@ -1,64 +1,69 @@
 import { AnyDOM } from "../dom.js"
 import { Modifiers } from "../properties/modifiers.js"
 
-export type Instruction<V, K extends keyof Modifiers<V>> = {
-  kind: K,
-  payload: Modifiers<V>[K]
+export type Instructions<V> = Partial<{ [L in keyof Modifiers<V>]: Modifiers<V>[L] }> & { id: number }
+
+export type Template<V> = {
+  paths: number[][],
+  instructions: Instructions<V>[]
 }
 
-export type Assembly<V> = Map<number[], Partial<{ [L in keyof Modifiers<V>]: Instruction<V, L> }>>
+export class Compiler<V> {
+  private ID_COUNTER = 0
 
-export function compile<V>(root: AnyDOM<V>) {
-  const instructions: Assembly<V> = new Map()
+  private _paths: number[][] = []
+  private _instructions: Instructions<V>[] = []
 
-  recursive_compile(root, [], instructions)
+  private recursive_compile(node: AnyDOM<V>, path: number[]): void {
+    const modifiers = node.properties.modifiers || {}
 
-  return instructions
-}
+    const has_modifiers =
+      modifiers.text !== undefined ||
+      modifiers.properties !== undefined ||
+      modifiers.events !== undefined ||
+      modifiers.iterate !== undefined
 
-function recursive_compile<V>(description: AnyDOM<V>, path: number[], instructions: Assembly<V>) {
-  let { modifiers } = description.properties
-  let has_instructions = false
+    if (has_modifiers) {
+      const current_id = this.ID_COUNTER++
 
-  modifiers = modifiers || {}
+      this._paths.push(path)
 
-  const payload = {} as { [L in keyof Modifiers<V>]: Instruction<V, L> }
+      const instruction: Instructions<V> = { id: current_id }
 
-  if (modifiers.properties !== undefined) {
-    has_instructions = true
+      if (modifiers.text !== undefined) {
+        instruction.text = modifiers.text
+      }
 
-    payload.properties = { kind: 'properties', payload: modifiers.properties }
+      if (modifiers.properties !== undefined) {
+        instruction.properties = modifiers.properties
+      }
+
+      if (modifiers.events !== undefined) {
+        instruction.events = modifiers.events
+      }
+
+      if (modifiers.iterate !== undefined) {
+        instruction.iterate = modifiers.iterate
+      }
+
+      this._instructions.push(instruction)
+    }
+
+    for (let index = 0; index < node.children.length; index++) {
+      this.recursive_compile(node.children[index], [...path, index])
+    }
   }
 
-  if (modifiers.text !== undefined) {
-    has_instructions = true
+  public compile(root: AnyDOM<V>): Template<V> {
+    this.ID_COUNTER = 0
+    this._instructions = []
+    this._paths = []
 
-    payload.text = { kind: 'text', payload: modifiers.text }
-  }
+    this.recursive_compile(root, [])
 
-  if (modifiers.lens !== undefined) {
-    has_instructions = true
-
-    payload.lens = { kind: 'lens', payload: modifiers.lens }
-  }
-
-  if (modifiers.iterate !== undefined) {
-    has_instructions = true
-
-    payload.iterate = { kind: 'iterate', payload: modifiers.iterate }
-  }
-
-  if (modifiers.events !== undefined) {
-    has_instructions = true
-
-    payload.events = { kind: 'events', payload: modifiers.events }
-  }
-
-  if (has_instructions) {
-    instructions.set(path, payload)
-  }
-
-  for (let index = 0; index < description.children.length; index++) {
-    recursive_compile(description.children[index], [...path, index], instructions)
+    return {
+      paths: this._paths,
+      instructions: this._instructions
+    }
   }
 }

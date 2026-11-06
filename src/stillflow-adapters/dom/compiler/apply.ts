@@ -1,142 +1,176 @@
-import { Assembly, Instruction, compile } from "./compile.js"
+import { Modifiers } from "../properties/modifiers.js"
+import { Template, Compiler } from "./compile.js"
 import { transform } from "./transform.js"
 
-type Applier = <V>(root: HTMLElement, context: V) => void
+const SF_LISTENED = '__stillflow_listened__'
+const SF_CONTEXT = '__stillflow_context__'
+const SF_CACHE = '__stillflow_cache__'
 
-const Active = new Set<string>()
-const Listeners = new WeakMap<HTMLElement, Map<string, (event: Event, context: any) => void>>()
-const Targets = new WeakMap<HTMLElement, Map<string, HTMLElement>>()
-const URLs = new Map<number[], string>()
+type Applier<V> = (root: HTMLElement, context: V) => void
 
-function find_element(path: number[], root: HTMLElement): HTMLElement {
-  let targets = Targets.get(root)
+export class Appliers<V> {
+  private _listeners = new WeakMap<HTMLElement, Map<string, (event: Event, context: any) => void>>()
+  private _actives = new Set<string>()
 
-  if (targets === undefined) {
-    targets = new Map()
-    Targets.set(root, targets)
+  private ensure_listener(name: string): void {
+    if (this._actives.has(name)) {
+      return
+    }
+
+    this._actives.add(name)
+
+    document.body.addEventListener(name, event => {
+      let target = event.target as HTMLElement
+
+      while (target && target !== document.body) {
+        const listeners = this._listeners.get(target)
+
+        if (listeners !== undefined) {
+          const callback = listeners.get(name)
+
+          callback?.(event, (target as any)[SF_CONTEXT])
+
+          if (event.cancelBubble) {
+            break
+          }
+        }
+
+        target = target.parentElement as HTMLElement
+      }
+    })
   }
 
-  let url = URLs.get(path)
+  private find_element_by(root: HTMLElement, path: number[]): HTMLElement {
+    let current = root
 
-  if (url === undefined) {
-    url = path.join('/')
-    URLs.set(path, url)
-  }
+    for (let id = 0; id < path.length; id++) {
+      current = current.children[path[id]] as HTMLElement
+    }
 
-  let current = targets.get(url)
-
-  if (current !== undefined) {
     return current
   }
 
-  current = root
+  private apply_text(id: number, payload: Modifiers<V>['text']): Applier<V> {
+    return (root: HTMLElement, context: V) => {
+      const text = payload!(context)
 
-  for (let index = 0; index < path.length; index++) {
-    current = current.children[path[index]] as HTMLElement
-  }
+      const nodes = (root as any)[SF_CACHE]
+      const element = nodes[id]
 
-  targets.set(url, current)
-
-  return current as HTMLElement
-}
-
-function ensure_event_listener(name: string): void {
-  if (Active.has(name)) {
-    return
-  }
-
-  Active.add(name)
-
-  document.body.addEventListener(name, function (event) {
-    let target = event.target as HTMLElement
-
-    while (target && target !== document.body) {
-      const listeners = Listeners.get(target)
-
-      if (listeners !== undefined) {
-        const callback = listeners.get(name)
-
-        callback?.(event, (target as any).$context)
-
-        if (event.cancelBubble) {
-          break
-        }
-      }
-
-      target = target.parentElement as HTMLElement
-    }
-  })
-}
-
-function apply_text(path: number[], instruction: Instruction<any, 'text'>): Applier {
-  return <V>(root: HTMLElement, context: V) => {
-    const text = instruction.payload?.(context) as string
-    const element = find_element(path, root)
-
-    let target = element.firstChild!
-
-    target.nodeValue = text
-  }
-}
-
-function apply_properties(path: number[], instruction: Instruction<any, 'properties'>): Applier {
-  const properties = instruction.payload || {}
-
-  return <V>(root: HTMLElement, context: V) => {
-    const target = find_element(path, root)
-
-    for (const key in properties) {
-      (target as any)[key] = (properties as any)[key](context)
+      element.firstChild!.nodeValue = text
     }
   }
-}
 
-function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V, 'iterate'>): Applier {
-  if (instruction.payload === undefined) {
-    throw new Error(`No payload for instruction "iterate"`)
+  private apply_properties(id: number, payload: Modifiers<V>['properties']): Applier<V> {
+    return (root: HTMLElement, context: V) => {
+      const nodes = (root as any)[SF_CACHE]
+      const element = nodes[id]
+
+      for (const key in payload) {
+        (element as any)[key] = (payload as any)[key](context)
+      }
+    }
   }
 
-  const { each, select } = instruction.payload
+  private apply_events(id: number, payload: Modifiers<V>['events']): Applier<V> {
+    return (root: HTMLElement, context: V) => {
+      const nodes = (root as any)[SF_CACHE]
+      const element = nodes[id] as any
 
-  const items = select(context)
-
-  const description = each()
-  const template = transform(description)
-  const compilation = compile(description)
-  const applier = apply(items, compilation)
-
-  let bindings: HTMLElement[] = []
-  let pool: HTMLElement[] = []
-
-  return (root: HTMLElement) => {
-    const target = find_element(path, root)
-    const { replaces, cleares, adds, removes, updates } = items.flush()
-
-    if (replaces) {
-      const items_count = items.total_size
-      const child_count = bindings.length
-      const common_count = Math.min(items_count, child_count)
-
-      for (let index = 0; index < common_count; index++) {
-        applier(bindings[index], items.at(index))
+      if (element[SF_LISTENED]) {
+        element[SF_CONTEXT] = context
+        return
       }
 
-      if (items_count < child_count) {
-        for (let index = items_count; index < child_count; index++) {
-          pool.push(bindings[index])
+      element[SF_LISTENED] = true
+      element[SF_CONTEXT] = context
 
-          bindings[index].remove()
+      const listeners = this._listeners.get(element)! || new Map()
+
+      for (let key in payload) {
+        listeners.set(key, (payload as any)[key])
+
+        this.ensure_listener(key)
+      }
+
+      this._listeners.set(element, listeners)
+    }
+  }
+
+  private apply_iterate(id: number, payload: Modifiers<V>['iterate']): Applier<V> {
+    const node = payload!.each()
+
+    const compiler = new Compiler<unknown>()
+    const appliers = new Appliers<unknown>()
+
+    const template = transform(node)
+    const compilation = compiler.compile(node)
+    const applier = appliers.apply(compilation)
+
+    let bindings = new Array<HTMLElement>()
+    let pool = new Array<HTMLElement>()
+
+    return (root: HTMLElement, context: V) => {
+      const items = payload!.select(context)
+
+      const nodes = (root as any)[SF_CACHE]
+      const target = nodes[id]
+
+      const { replaces, cleares, adds, removes, updates } = items.flush()
+
+      if (replaces) {
+        const items_count = items.total_size
+        const child_count = bindings.length
+        const common_count = Math.min(items_count, child_count)
+
+        for (let index = 0; index < common_count; index++) {
+          applier(bindings[index], items.at(index))
         }
 
-        bindings.length = items_count
-      } else {
+        if (items_count < child_count) {
+          for (let index = items_count; index < child_count; index++) {
+            pool.push(bindings[index])
+
+            bindings[index].remove()
+          }
+
+          bindings.length = items_count
+        } else {
+          const fragment = document.createDocumentFragment()
+          const elements = new Array<HTMLElement>(items_count - child_count)
+
+          for (let index = child_count; index < items_count; index++) {
+            const element = pool.pop() || template.cloneNode(true)
+
+            applier(element as HTMLElement, items.at(index))
+
+            elements[index] = element as HTMLElement
+
+            fragment.appendChild(element)
+          }
+
+          bindings = bindings.concat(elements)
+
+          target.appendChild(fragment)
+        }
+
+        return
+      }
+
+      if (cleares) {
+        pool = pool.concat(bindings.splice(0))
+        target.innerHTML = String()
+      }
+
+      if (adds > 0) {
         const fragment = document.createDocumentFragment()
-        const elements = new Array<HTMLElement>(items_count - child_count)
+        const old_size = bindings.length
+        const elements = new Array<HTMLElement>(adds)
 
-        for (let index = child_count; index < items_count; index++) {
-          const element = pool.pop() || template.cloneNode(true)
+        for (let index = 0; index < adds; index++) {
+          const element = template.cloneNode(true)
 
-          applier(element as HTMLElement, items.at(index))
+          applier(element as HTMLElement, items.at(index + old_size))
 
           elements[index] = element as HTMLElement
 
@@ -148,121 +182,86 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
         target.appendChild(fragment)
       }
 
-      return
-    }
+      for (const id of removes) {
+        const element = bindings[id]
 
-    if (cleares) {
-      pool = pool.concat(bindings.splice(0))
-      target.innerHTML = String()
-    }
+        pool.push(element as HTMLElement)
 
-    if (adds > 0) {
-      const fragment = document.createDocumentFragment()
-      const old_size = bindings.length
-      const elements = new Array<HTMLElement>(adds)
-
-      for (let index = 0; index < adds; index++) {
-        const element = template.cloneNode(true)
-
-        applier(element as HTMLElement, items.at(index + old_size))
-
-        elements[index] = element as HTMLElement
-
-        fragment.appendChild(element)
+        element.remove()
       }
 
-      bindings = bindings.concat(elements)
-
-      target.appendChild(fragment)
-    }
-
-    for (const id of removes) {
-      const element = bindings[id]
-
-      pool.push(element as HTMLElement)
-
-      element.remove()
-    }
-
-    for (const id of updates) {
-      applier(bindings[id], items.at(id))
-    }
-  }
-}
-
-function apply_events(path: number[], instruction: Instruction<any, 'events'>): Applier {
-  return <V>(root: HTMLElement, context: V) => {
-    const target = find_element(path, root)
-    const element = target as any
-
-    if (element.$listened) {
-      element.$context = context
-      return
-    }
-
-    const events = instruction.payload || {}
-
-    element.$listened = true
-    element.$context = context
-
-    const listeners = Listeners.get(target)! || new Map()
-
-    for (const key in events) {
-      listeners.set(key, (events as any)[key])
-
-      ensure_event_listener(key)
-    }
-
-    Listeners.set(element, listeners)
-  }
-}
-
-export function apply<V>(context: V, assembly: Assembly<V>): Applier {
-  const appliers = {
-    text: [],
-    iterate: [],
-    events: [],
-    properties: []
-  } as {
-    text: Applier[],
-    iterate: Applier[],
-    events: Applier[],
-    properties: Applier[]
-  }
-
-  for (const [path, instructions] of assembly.entries()) {
-    if (instructions.text !== undefined) {
-      appliers.text.push(apply_text(path, instructions.text))
-    }
-
-    if (instructions.iterate !== undefined) {
-      appliers.iterate.push(apply_iterate(path, context, instructions.iterate))
-    }
-
-    if (instructions.properties !== undefined) {
-      appliers.properties.push(apply_properties(path, instructions.properties))
-    }
-
-    if (instructions.events !== undefined) {
-      appliers.events.push(apply_events(path, instructions.events))
+      for (const id of updates) {
+        applier(bindings[id], items.at(id))
+      }
     }
   }
 
-  return <W>(root: HTMLElement, context: W) => {
-    for (const applier of appliers.text) {
-      applier(root, context)
+  private markup(root: HTMLElement, paths: number[][]): HTMLElement[] {
+    const node = root as any
+
+    if (node[SF_CACHE]) {
+      return node[SF_CACHE]
     }
 
-    for (const applier of appliers.events) {
-      applier(root, context)
+    const cache = new Array<HTMLElement>(paths.length)
+
+    for (let id = 0; id < paths.length; id++) {
+      cache[id] = this.find_element_by(root, paths[id])
     }
 
-    for (const applier of appliers.properties) {
-      applier(root, context)
+    node[SF_CACHE] = cache
+
+    return cache
+  }
+
+  public apply(template: Template<V>): Applier<V> {
+    const { instructions, paths } = template
+    const appliers = {
+      text: new Array<Applier<V>>(),
+      iterate: new Array<Applier<V>>(),
+      events: new Array<Applier<V>>(),
+      properties: new Array<Applier<V>>()
     }
 
-    for (const applier of appliers.iterate) {
-      applier(root, context)
+    for (let index = 0; index < instructions.length; index++) {
+      const instruction = instructions[index]
+      const id = instruction.id
+
+      if (instruction.text !== undefined) {
+        appliers.text.push(this.apply_text(id, instruction.text))
+      }
+
+      if (instruction.iterate !== undefined) {
+        appliers.iterate.push(this.apply_iterate(id, instruction.iterate))
+      }
+
+      if (instruction.events !== undefined) {
+        appliers.events.push(this.apply_events(id, instruction.events))
+      }
+
+      if (instruction.properties !== undefined) {
+        appliers.properties.push(this.apply_properties(id, instruction.properties))
+      }
+    }
+
+    return (root: HTMLElement, context: V) => {
+      this.markup(root, paths)
+
+      for (const applier of appliers.text) {
+        applier(root, context)
+      }
+
+      for (const applier of appliers.events) {
+        applier(root, context)
+      }
+
+      for (const applier of appliers.properties) {
+        applier(root, context)
+      }
+
+      for (const applier of appliers.iterate) {
+        applier(root, context)
+      }
     }
   }
 }

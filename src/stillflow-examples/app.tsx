@@ -44,7 +44,7 @@ function TodoList<V>(properties: { select: (context: V) => Collection<TodoItem> 
 
 const items = new Collection<TodoItem>([], 1000)
 
-const { element, update } = jsxdom.$(<TodoList select={(context: { items: Collection<TodoItem> }) => context.items} />, { items })
+const { element, update } = jsxdom.$(<TodoList select={(context: { items: Collection<TodoItem> }) => context.items} />)
 
 document.body.appendChild(element)
 
