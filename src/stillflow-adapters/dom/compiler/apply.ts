@@ -15,7 +15,9 @@ function find_element(path: number[], root: HTMLElement): HTMLElement {
     Targets.set(root, targets)
   }
 
-  let current = targets.get(path.join('/'))
+  const url = path.join('/')
+
+  let current = targets.get(url)
 
   if (current !== undefined) {
     return current
@@ -26,6 +28,8 @@ function find_element(path: number[], root: HTMLElement): HTMLElement {
   for (let index = 0; index < path.length; index++) {
     current = current.children[path[index]] as HTMLElement
   }
+
+  targets.set(url, current)
 
   return current as HTMLElement
 }
@@ -103,12 +107,9 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
   let bindings: HTMLElement[] = []
   let pool: HTMLElement[] = []
 
-  let old_size = 0
-
   return (root: HTMLElement) => {
     const target = find_element(path, root)
-    const size = items.total_size
-    const { replaces, cleares, removes, updates } = items.flush()
+    const { replaces, cleares, adds, removes, updates } = items.flush()
 
     if (replaces) {
       const items_count = items.total_size
@@ -149,20 +150,19 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
       target.innerHTML = String()
     }
 
-    if (size - old_size > 0) {
+    if (adds > 0) {
       const fragment = document.createDocumentFragment()
+      const old_size = bindings.length
 
-      for (let index = old_size; index < size; index++) {
-        const element = pool.pop() || template.cloneNode(true)
+      for (let index = 0; index < adds; index++) {
+        const element = template.cloneNode(true)
 
-        applier(element as HTMLElement, items.at(index))
+        applier(element as HTMLElement, items.at(index + old_size))
 
         bindings.push(element as HTMLElement)
 
         fragment.appendChild(element)
       }
-
-      old_size = size
 
       target.appendChild(fragment)
     }

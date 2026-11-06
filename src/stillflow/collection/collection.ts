@@ -8,8 +8,8 @@ export class Collection<T> {
   private _updated = new Set<number>()
   private _removed = new Set<number>()
   private _cleared: number = 0
+  private _added: number = 0
 
-  private _added_since_flush: boolean = false
   private _cleared_since_flush: boolean = false
 
   public constructor(private _data: T[], private _size: number) {
@@ -50,9 +50,9 @@ export class Collection<T> {
   public join(value: T[]): void {
     this._data = this._data.concat(value)
 
-    const index = this._data.length + value.length
+    const index = this._data.length + value.length - 1
 
-    this._added_since_flush = true
+    this._added += value.length
 
     while (index >= this._size) {
       this._fenwick = this._fenwick.grow(this._size)
@@ -63,7 +63,7 @@ export class Collection<T> {
   public add(value: T): void {
     const index = this._data.push(value) - this._cleared
 
-    this._added_since_flush = true
+    this._added += 1
 
     if (index >= this._size) {
       this._fenwick = this._fenwick.grow(this._size)
@@ -91,21 +91,22 @@ export class Collection<T> {
 
     this._cleared = this._data.length
     this._cleared_since_flush = true
-    this._added_since_flush = false
+    this._added = 0
   }
 
   public flush() {
     const updates = Array.from(this._updated)
     const removes = Array.from(this._removed)
     const cleares = this._cleared_since_flush
-    const replaces = cleares && this._added_since_flush
+    const replaces = cleares && (this._added > 0)
+    const adds = this._added
 
+    this._added = 0
     this._updated.clear()
     this._removed.clear()
     this._cleared_since_flush = false
-    this._added_since_flush = false
 
-    return { updates, removes, cleares, replaces }
+    return { updates, removes, cleares, adds, replaces }
   }
 
   public size() {
