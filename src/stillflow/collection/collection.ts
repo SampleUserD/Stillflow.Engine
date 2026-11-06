@@ -12,7 +12,7 @@ export class Collection<T> {
 
   private _cleared_since_flush: boolean = false
 
-  public constructor(private _data: T[], private _size: number) {
+  public constructor(private _data: T[] = [], private _size: number = 1) {
     this._fenwick = new Fenwick(this._size)
   }
 
