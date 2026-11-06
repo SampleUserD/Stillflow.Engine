@@ -13,12 +13,10 @@ type Mapping = Record<string, any>
 export class Stillflow<T extends Mapping = Mapping> {
   private _views: Set<Meta> = new Set()
 
-  private _buffer: Buffer<T>
   private _kernel: Kernel<T>
 
   public constructor(private _state: AbstractState<T>) {
-    this._buffer = new Buffer(this._state)
-    this._kernel = new Kernel(this._buffer)
+    this._kernel = new Kernel(this._state)
 
     this._kernel.before(() => {
       for (const view of [...this._views]) {
@@ -39,6 +37,14 @@ export class Stillflow<T extends Mapping = Mapping> {
 
   public factory() {
     return new Factories()
+  }
+
+  public buffer(): Buffer<T> {
+    return new Buffer()
+  }
+
+  public bind(buffer: Buffer<T>): void {
+    this._kernel.bind(buffer)
   }
 
   public compile<V extends Mapping>(source: V): View<V, T> {
