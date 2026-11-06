@@ -6,6 +6,7 @@ type Applier = <V>(root: HTMLElement, context: V) => void
 const Active = new Set<string>()
 const Listeners = new WeakMap<HTMLElement, Map<string, (event: Event, context: any) => void>>()
 const Targets = new WeakMap<HTMLElement, Map<string, HTMLElement>>()
+const URLs = new Map<number[], string>()
 
 function find_element(path: number[], root: HTMLElement): HTMLElement {
   let targets = Targets.get(root)
@@ -15,7 +16,12 @@ function find_element(path: number[], root: HTMLElement): HTMLElement {
     Targets.set(root, targets)
   }
 
-  const url = path.join('/')
+  let url = URLs.get(path)
+
+  if (url === undefined) {
+    url = path.join('/')
+    URLs.set(path, url)
+  }
 
   let current = targets.get(url)
 
@@ -69,12 +75,7 @@ function apply_text(path: number[], instruction: Instruction<any, 'text'>): Appl
 
     let target = element.firstChild!
 
-    if (target === null || target.nodeType !== Node.TEXT_NODE) {
-      target = document.createTextNode(text)
-      element.insertBefore(target, null)
-    } else {
-      target.nodeValue = text
-    }
+    target.nodeValue = text
   }
 }
 
@@ -126,18 +127,23 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
 
           bindings[index].remove()
         }
+
+        bindings.length = items_count
       } else {
         const fragment = document.createDocumentFragment()
+        const elements = new Array<HTMLElement>(items_count - child_count)
 
         for (let index = child_count; index < items_count; index++) {
           const element = pool.pop() || template.cloneNode(true)
 
           applier(element as HTMLElement, items.at(index))
 
-          bindings.push(element as HTMLElement)
+          elements[index] = element as HTMLElement
 
           fragment.appendChild(element)
         }
+
+        bindings = bindings.concat(elements)
 
         target.appendChild(fragment)
       }
@@ -153,16 +159,19 @@ function apply_iterate<V>(path: number[], context: V, instruction: Instruction<V
     if (adds > 0) {
       const fragment = document.createDocumentFragment()
       const old_size = bindings.length
+      const elements = new Array<HTMLElement>(adds)
 
       for (let index = 0; index < adds; index++) {
         const element = template.cloneNode(true)
 
         applier(element as HTMLElement, items.at(index + old_size))
 
-        bindings.push(element as HTMLElement)
+        elements[index] = element as HTMLElement
 
         fragment.appendChild(element)
       }
+
+      bindings = bindings.concat(elements)
 
       target.appendChild(fragment)
     }
@@ -209,28 +218,51 @@ function apply_events(path: number[], instruction: Instruction<any, 'events'>): 
 }
 
 export function apply<V>(context: V, assembly: Assembly<V>): Applier {
-  const appliers: Applier[] = []
+  const appliers = {
+    text: [],
+    iterate: [],
+    events: [],
+    properties: []
+  } as {
+    text: Applier[],
+    iterate: Applier[],
+    events: Applier[],
+    properties: Applier[]
+  }
 
   for (const [path, instructions] of assembly.entries()) {
-    for (const instruction of instructions) {
-      switch (instruction.kind) {
-        case 'text':
-          appliers.push(apply_text(path, instruction as Instruction<V, typeof instruction.kind>))
-          break
-        case 'iterate':
-          appliers.push(apply_iterate(path, context, instruction as Instruction<V, typeof instruction.kind>))
-          break
-        case 'events':
-          appliers.push(apply_events(path, instruction as Instruction<V, typeof instruction.kind>))
-          break
-        case 'properties':
-          appliers.push(apply_properties(path, instruction as Instruction<V, typeof instruction.kind>))
-          break
-        default:
-          throw new Error('Undefined operator')
-      }
+    if (instructions.text !== undefined) {
+      appliers.text.push(apply_text(path, instructions.text))
+    }
+
+    if (instructions.iterate !== undefined) {
+      appliers.iterate.push(apply_iterate(path, context, instructions.iterate))
+    }
+
+    if (instructions.properties !== undefined) {
+      appliers.properties.push(apply_properties(path, instructions.properties))
+    }
+
+    if (instructions.events !== undefined) {
+      appliers.events.push(apply_events(path, instructions.events))
     }
   }
 
-  return <W>(root: HTMLElement, context: W) => appliers.forEach(applier => applier(root, context))
+  return <W>(root: HTMLElement, context: W) => {
+    for (const applier of appliers.text) {
+      applier(root, context)
+    }
+
+    for (const applier of appliers.events) {
+      applier(root, context)
+    }
+
+    for (const applier of appliers.properties) {
+      applier(root, context)
+    }
+
+    for (const applier of appliers.iterate) {
+      applier(root, context)
+    }
+  }
 }
