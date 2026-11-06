@@ -10,11 +10,10 @@ export class Batcher<P extends Mapping = Mapping> {
 
   public constructor(private _core: Stillflow<P>, private _strategy: Strategy) {
     this._buffer = this._core.buffer()
+    this._core.bind(this._buffer)
   }
 
   public update(updater: () => void) {
-    this._core.bind(this._buffer)
-
     updater()
 
     if (this._commiting) {
