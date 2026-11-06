@@ -1,21 +1,11 @@
-import { Stillflow } from "../stillflow/stillflow.js"
-
-type Mapping = Record<string, any>
-
 type Strategy = (site: () => void) => void
 
-export class Batcher<P extends Mapping = Mapping> {
+export class Batcher {
   private _commiting: boolean = false
-  private _buffer: ReturnType<typeof this._core.buffer>
 
-  public constructor(private _core: Stillflow<P>, private _strategy: Strategy) {
-    this._buffer = this._core.buffer()
-    this._core.bind(this._buffer)
-  }
+  public constructor(private _strategy: Strategy) { }
 
-  public update(updater: () => void) {
-    updater()
-
+  public task(task: () => void) {
     if (this._commiting) {
       return
     }
@@ -23,7 +13,7 @@ export class Batcher<P extends Mapping = Mapping> {
     this._commiting = true
 
     this._strategy(() => {
-      this._core.commit()
+      task()
       this._commiting = false
     })
   }

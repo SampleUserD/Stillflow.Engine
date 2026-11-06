@@ -10,12 +10,16 @@ import { Variable } from "./variable.js"
 
 type Mapping = Record<string, any>
 
+type Options = { strategy: (site: () => void) => void }
+
 export class Stillflow<T extends Mapping = Mapping> {
   private _views: Set<Meta> = new Set()
 
   private _kernel: Kernel<T>
 
-  public constructor(private _state: AbstractState<T>) {
+  private _commiting = false
+
+  public constructor(private _state: AbstractState<T>, private _options: Options = { strategy: (site) => site() }) {
     this._kernel = new Kernel(this._state)
 
     this._kernel.before(() => {
@@ -65,7 +69,16 @@ export class Stillflow<T extends Mapping = Mapping> {
   }
 
   public commit(): void {
-    this._kernel.commit()
+    if (this._commiting) {
+      return
+    }
+
+    this._commiting = true
+
+    this._options.strategy(() => {
+      this._kernel.commit()
+      this._commiting = false
+    })
   }
 
   public variable<K extends keyof T>(path: K): Variable<T, K> {
