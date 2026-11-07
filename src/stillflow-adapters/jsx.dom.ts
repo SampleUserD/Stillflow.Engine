@@ -12,11 +12,12 @@ type JSXProperties<V, K extends keyof HTMLElementTagNameMap> = Omit<Omit<HTMLEle
     'styles': HTMLElementTagNameMap[K]['style'],
     'sf-text': (context: V) => string
     'sf-for': (context: V) => Collection<unknown>,
-    'sf-each': () => AnyDOM<V>
+    'sf-each': () => AnyDOM<V>,
+    'sf-if': (context: V) => boolean
   } & {
-    [L in (keyof HTMLElementTagNameMap[K]) & string as `$${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
+    [L in (keyof HTMLElementTagNameMap[K]) & string as `sf-${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
   } & {
-    [L in keyof HTMLElementEventMap as `sf-on${L}`]: (event: HTMLElementEventMap[L], context: V) => void
+    [L in keyof HTMLElementEventMap as `sf-on-${L}`]: (event: HTMLElementEventMap[L], context: V) => void
   } & {
     'children': AnyDOM<V>[]
   }
@@ -81,12 +82,14 @@ function map_jsx_to_dom<V, K extends keyof HTMLElementTagNameMap>(jsx: Partial<J
       }
     } else if (key === 'sf-text') {
       dom.modifiers.text = (jsx as any)['sf-text']
-    } else if (key.startsWith('sf-on')) {
+    } else if (key === 'sf-if') {
+      dom.modifiers.conditional = (jsx as any)['sf-if']
+    } else if (key.startsWith('sf-on-')) {
       dom.modifiers.events = dom.modifiers.events || {};
-      (dom.modifiers.events as any)[key.slice('sf-on'.length)] = (jsx as any)[key]
-    } else if (key.startsWith('$')) {
+      (dom.modifiers.events as any)[key.slice('sf-on-'.length)] = (jsx as any)[key]
+    } else if (key.startsWith('sf-')) {
       dom.modifiers.properties = dom.modifiers.properties || {};
-      (dom.modifiers.properties as any)[key.slice('$'.length)] = (jsx as any)[key]
+      (dom.modifiers.properties as any)[key.slice('sf-'.length)] = (jsx as any)[key]
     } else if (key !== 'children') {
       (dom.properties as any)[key] = (jsx as any)[key]
     }

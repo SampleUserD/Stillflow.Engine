@@ -50,6 +50,16 @@ export class Appliers<V> {
     return current
   }
 
+  private apply_conditional(id: number, payload: Modifiers<V>['conditional']): Applier<V> {
+    return (root: HTMLElement, context: V) => {
+      const nodes = (root as any)[SF_CACHE]
+      const target = nodes[id]
+      const condition = payload!(context)
+
+      target.style.display = condition ? String() : 'none'
+    }
+  }
+
   private apply_text(id: number, payload: Modifiers<V>['text']): Applier<V> {
     return (root: HTMLElement, context: V) => {
       const text = payload!(context)
@@ -220,7 +230,8 @@ export class Appliers<V> {
       text: new Array<Applier<V>>(),
       iterate: new Array<Applier<V>>(),
       events: new Array<Applier<V>>(),
-      properties: new Array<Applier<V>>()
+      properties: new Array<Applier<V>>(),
+      conditional: new Array<Applier<V>>()
     }
 
     for (let index = 0; index < instructions.length; index++) {
@@ -242,6 +253,10 @@ export class Appliers<V> {
       if (instruction.properties !== undefined) {
         appliers.properties.push(this.apply_properties(id, instruction.properties))
       }
+
+      if (instruction.conditional !== undefined) {
+        appliers.conditional.push(this.apply_conditional(id, instruction.conditional))
+      }
     }
 
     return (root: HTMLElement, context: V) => {
@@ -260,6 +275,10 @@ export class Appliers<V> {
       }
 
       for (const applier of appliers.iterate) {
+        applier(root, context)
+      }
+
+      for (const applier of appliers.conditional) {
         applier(root, context)
       }
     }

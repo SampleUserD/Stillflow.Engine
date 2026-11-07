@@ -10,20 +10,19 @@ const view = stillflow.compile({
 type TodoItem = {
   id: number,
   label: string,
-  done: boolean
+  loaded: boolean
 }
 
 function Todo() {
   return (
-    <jsxdom.div>
+    <jsxdom.div sf-if={(context: TodoItem) => context.loaded}>
       <jsxdom.span>
         {(context: TodoItem) => context.id + 1}.
       </jsxdom.span>
       <jsxdom.span>
         {(context: TodoItem) => context.label}
       </jsxdom.span>
-      <jsxdom.input type="checkbox" disabled={true} $checked={(context: TodoItem) => context.done} />
-      <jsxdom.button type="button" sf-onclick={(event, context: TodoItem) => remove(context.id)}>
+      <jsxdom.button type="button" sf-on-click={(event, context: TodoItem) => remove(context.id)}>
         X
       </jsxdom.button>
     </jsxdom.div>
@@ -35,7 +34,7 @@ function TodoList<V>(properties: { select: (context: V) => Collection<TodoItem> 
 
   return (
     <jsxdom.div>
-      <jsxdom.input type="text" $value={() => view.input} onchange={event => change(event.currentTarget as HTMLInputElement)} />
+      <jsxdom.input type="text" sf-value={() => view.input} onchange={event => change(event.currentTarget as HTMLInputElement)} />
       <jsxdom.button type="button" onclick={() => add()}>Add</jsxdom.button>
       <jsxdom.div sf-for={select} sf-each={() => <Todo />} />
     </jsxdom.div>
@@ -55,9 +54,14 @@ function remove(id: number) {
 
 function add() {
   const id = items.total_size
-  items.add({ id, label: view.input, done: false })
+  items.add({ id, label: view.input, loaded: false })
   view.input = String()
   stillflow.commit()
+
+  if (id % 10 === 0) {
+    items.mutate(id, view => view.loaded = true)
+  }
+
   update({ items })
 }
 

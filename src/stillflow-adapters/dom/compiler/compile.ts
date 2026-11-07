@@ -21,7 +21,8 @@ export class Compiler<V> {
       modifiers.text !== undefined ||
       modifiers.properties !== undefined ||
       modifiers.events !== undefined ||
-      modifiers.iterate !== undefined
+      modifiers.iterate !== undefined ||
+      modifiers.conditional !== undefined
 
     if (has_modifiers) {
       const current_id = this.ID_COUNTER++
@@ -44,6 +45,10 @@ export class Compiler<V> {
 
       if (modifiers.iterate !== undefined) {
         instruction.iterate = modifiers.iterate
+      }
+
+      if (modifiers.conditional !== undefined) {
+        instruction.conditional = modifiers.conditional
       }
 
       this._instructions.push(instruction)
