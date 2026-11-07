@@ -128,10 +128,10 @@ export class Appliers<V> {
       const nodes = (root as any)[SF_CACHE]
       const target = nodes[id]
 
-      const { replaces, cleares, adds, removes, updates } = items.flush()
+      const { replaces, clears, addes, swaps, removes, updates } = items.flush()
 
       if (replaces) {
-        const items_count = items.total_size
+        const items_count = items.total
         const child_count = bindings.length
         const common_count = Math.min(items_count, child_count)
 
@@ -169,17 +169,17 @@ export class Appliers<V> {
         return
       }
 
-      if (cleares) {
+      if (clears) {
         pool = pool.concat(bindings.splice(0))
         target.innerHTML = SPACE
       }
 
-      if (adds > 0) {
+      if (addes > 0) {
         const fragment = document.createDocumentFragment()
         const old_size = bindings.length
-        const elements = new Array<HTMLElement>(adds)
+        const elements = new Array<HTMLElement>(addes)
 
-        for (let index = 0; index < adds; index++) {
+        for (let index = 0; index < addes; index++) {
           const element = template.cloneNode(true)
 
           applier(element as HTMLElement, items.at(index + old_size))
@@ -192,6 +192,11 @@ export class Appliers<V> {
         bindings = bindings.concat(elements)
 
         target.appendChild(fragment)
+      }
+
+      for (const [i, j] of swaps.entries()) {
+        applier(bindings[i], items.at(i))
+        applier(bindings[j], items.at(j))
       }
 
       for (const id of removes) {

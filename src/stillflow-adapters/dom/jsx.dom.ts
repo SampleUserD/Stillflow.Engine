@@ -1,9 +1,9 @@
-import { Collection } from "../index.js"
-import { Binding } from "./binding.js"
-import { AnyDOM } from "./dom/dom.js"
-import { Properties } from "./dom/properties/properties.js"
-import { HTML_TAGS } from "./dom/tags.js"
-import { describe } from "./dom/description/describe.js"
+import { Binding } from "../binding.js"
+import { AnyDOM } from "./dom.js"
+import { Properties } from "./properties/properties.js"
+import { HTML_TAGS } from "./tags.js"
+import { describe } from "./description/describe.js"
+import { FlushableCollection } from "../../index.js"
 
 type ElementDynamicContent<V> = (context: V) => string
 
@@ -19,7 +19,7 @@ type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: HTMLElemen
 type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style'>
 type ElementServicePropertiesWithoutPrefix<V> = {
   'if': (context: V) => boolean,
-  'for': (context: V) => Collection<unknown>,
+  'for': (context: V) => FlushableCollection<unknown>,
   'each': () => AnyDOM<V>
 }
 type ElementServicePropertiesWithPrefix<V> = {

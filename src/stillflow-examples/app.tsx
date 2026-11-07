@@ -1,4 +1,4 @@
-import { Stillflow, Collection, State, Batcher, operators, adapters } from "../index.js"
+import { Stillflow, State, Batcher, operators, adapters, FlushableCollection, FenwickCollection } from "../index.js"
 import { buildData } from "./data.js"
 
 const { jsxdom, jsx, DOM } = adapters
@@ -21,7 +21,7 @@ type FullBenchmarkView = {
     previous_id: BenchmarkMapping['previous_id']
   },
   data: BenchmarkMapping['data'],
-  items: Collection<BenchmarkItem>
+  items: FlushableCollection<BenchmarkItem>
 }
 
 class BenchmarkApplicationController {
@@ -32,7 +32,7 @@ class BenchmarkApplicationController {
   private _view: FullBenchmarkView
 
   private schedule_clear() {
-    this._view.items.clear()
+    this._view.items.mark_cleared()
 
     this._clearing.task(() => this._view.items.shrink())
   }
@@ -60,12 +60,12 @@ class BenchmarkApplicationController {
         current_id: current_id.backref()
       }),
       data: data.backref(),
-      items: operators.is(Collection.name)
+      items: operators.is(FlushableCollection.name)
     }
   }
 
   public constructor() {
-    this._factory.add(Collection.name, view => new Collection(view.data, 10000))
+    this._factory.add(FlushableCollection.name, view => new FlushableCollection(new FenwickCollection(10000)))
 
     const view = this._stillflow.compile(this.source)
 
@@ -77,7 +77,7 @@ class BenchmarkApplicationController {
   }
 
   public add(count: number = 1000) {
-    this._view.items.join(buildData(count))
+    this._view.items.attach(buildData(count))
     this._stillflow.commit()
   }
 
@@ -90,7 +90,7 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
-    this._view.items.remove(id)
+    this._view.items.mark_removed(id)
     this._stillflow.commit()
   }
 
@@ -112,18 +112,18 @@ class BenchmarkApplicationController {
   }
 
   public update() {
-    const length = this._view.items.size()
+    const length = this._view.items.size
     const mutator = (view: BenchmarkItem) => view.label += ' !!!'
 
     for (let id = 0; id < length; id += 10) {
-      this._view.items.mutate(this._view.items.index(id), mutator)
+      this._view.items.mutate(this._view.items.map(id), mutator)
     }
 
     this._stillflow.commit()
   }
 
   public swap() {
-    const size = this._view.items.size()
+    const size = this._view.items.size
     const mutator = (id: number) => (view: BenchmarkItem) => view.index = id
 
     if (size > 998) {

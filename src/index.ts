@@ -2,7 +2,10 @@ import * as adapters from './stillflow-adapters/index.js'
 
 import operators from './stillflow/operators.js'
 
-export { Collection } from './stillflow/collection/collection.js'
+export { FlushableCollection } from './stillflow-collection/flushable.js'
+export { AbstractCollection } from './stillflow-collection/abstract/collection.js'
+export { FenwickCollection } from './stillflow-collection/fenwick.js'
+
 export { Stillflow } from './stillflow/stillflow.js'
 export { State } from './stillflow/state.js'
 
