@@ -1,109 +1,120 @@
 import { Collection } from "../index.js"
 import { Binding } from "./binding.js"
-import { AnyDOM, DOM } from "./dom/dom.js"
+import { AnyDOM } from "./dom/dom.js"
 import { Properties } from "./dom/properties/properties.js"
 import { HTML_TAGS } from "./dom/tags.js"
-import { dom } from "./index.js"
+import { describe } from "./dom/description/describe.js"
 
-type JSXProperties<V, K extends keyof HTMLElementTagNameMap> = Omit<Omit<HTMLElementTagNameMap[K], 'style'>, 'children'>
-  & HTMLElementEventMap
-  & {
-    'text': string,
-    'styles': HTMLElementTagNameMap[K]['style'],
-    'sf-text': (context: V) => string
-    'sf-for': (context: V) => Collection<unknown>,
-    'sf-each': () => AnyDOM<V>,
-    'sf-if': (context: V) => boolean
-  } & {
-    [L in (keyof HTMLElementTagNameMap[K]) & string as `sf-${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
-  } & {
-    [L in keyof HTMLElementEventMap as `sf-on-${L}`]: (event: HTMLElementEventMap[L], context: V) => void
-  } & {
-    'children': AnyDOM<V>[]
-  }
+type ElementDynamicContent<V> = (context: V) => string
 
-type JSXDescriptions = {
-  [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXProperties<V, K>>) => DOM<V, K>
-} & {
-  $: typeof dom.$
+const DYNAMIC_PROPERTY_CONDITIONAL_MAP = 'conditional'
+
+const DYNAMIC_PROPERTY_PREFIX = `sf:`
+const DYNAMIC_PROPERTY_CYCLES = [`${DYNAMIC_PROPERTY_PREFIX}for`, `${DYNAMIC_PROPERTY_PREFIX}each`]
+const DYNAMIC_PROPERTY_CONDITIONAL = `${DYNAMIC_PROPERTY_PREFIX}if`
+const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
+const COMMON_EVENT_PROPERTY_PREFIX = `on:`
+
+type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: HTMLElementTagNameMap[K]['style'] }
+type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style'>
+type ElementServicePropertiesWithoutPrefix<V> = {
+  'if': (context: V) => boolean,
+  'for': (context: V) => Collection<unknown>,
+  'each': () => AnyDOM<V>
+}
+type ElementServicePropertiesWithPrefix<V> = {
+  [K in keyof ElementServicePropertiesWithoutPrefix<V> as `${typeof DYNAMIC_PROPERTY_PREFIX}${K}`]: ElementServicePropertiesWithoutPrefix<V>[K]
+}
+type ElementDynamicPropertiesWithPrefix<V, K extends keyof HTMLElementTagNameMap> = {
+  [L in (keyof HTMLElementTagNameMap[K]) & string as `${typeof DYNAMIC_PROPERTY_PREFIX}${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
+}
+type ElementDelegateEventsWithPrefix<V> = {
+  [L in keyof HTMLElementEventMap as `${typeof DELEGATE_EVENT_PROPERTY_PREFIX}${L}`]: (event: HTMLElementEventMap[L], context: V) => void
+}
+type ElementEventMap<V> = {
+  [K in keyof HTMLElementEventMap as `${typeof COMMON_EVENT_PROPERTY_PREFIX}${K}`]: (event: HTMLElementEventMap[K], context: V) => void
 }
 
-const JSX_TO_DOM_CACHE = new WeakMap<Partial<JSXProperties<any, any>>, Properties<any, any>>()
+type JSXElementProperties<V, K extends keyof HTMLElementTagNameMap> =
+  ElementEventMap<V> &
+  ElementStyles<K> &
+  ElementPropertiesWithoutStyles<K> &
+  ElementDynamicPropertiesWithPrefix<V, K> &
+  ElementServicePropertiesWithPrefix<V> &
+  ElementDelegateEventsWithPrefix<V>
 
-function map_jsx_to_dom<V, K extends keyof HTMLElementTagNameMap>(jsx: Partial<JSXProperties<V, K>>): Omit<Properties<V, K>, 'name'> {
-  if (jsx === null || jsx === undefined) {
-    throw new Error(`JSX cannot be empty`)
+class JSXDOMUtilities {
+  public static patch(object: Record<string, any>, key: string, value: any) {
+    object[key] = value
   }
 
-  let dom = JSX_TO_DOM_CACHE.get(jsx as Partial<JSXProperties<any, any>>) as Required<Omit<Properties<V, K>, 'name'>>
+  public static outsort_children<V>(all: any[]) {
+    const content = new Array<ElementDynamicContent<V>>()
+    const children = new Array<Binding<any>>()
 
-  if (dom !== undefined) {
-    return dom
-  }
-
-  dom = {
-    events: {},
-    properties: {},
-    modifiers: {},
-    styles: jsx.styles ?? {},
-    text: jsx.text ?? String()
-  }
-
-  const dynamic_content: ((context: any) => string)[] = []
-  const real_children: AnyDOM<any>[] = []
-
-  for (const child of jsx.children ?? []) {
-    if (typeof child === 'string' || typeof child === 'number') {
-      dynamic_content.push(() => child)
-    } else if (child === undefined || child === null) {
-      continue
-    } else if (typeof child === 'function') {
-      dynamic_content.push(child)
-    } else if (typeof child === 'object') {
-      real_children.push(child)
-    } else {
-      throw new Error(`JSX does not accept nodes of type '${typeof child}'`)
-    }
-  }
-
-  (jsx as any).children = real_children
-
-  if (jsx['sf-text'] === undefined && dynamic_content.length > 0) {
-    (jsx as any)['sf-text'] = (context: any) => dynamic_content.map(site => site(context)).join(String())
-  }
-
-  for (const key in jsx) {
-    if (key.startsWith('on')) {
-      (dom.events as any)[key.slice('on'.length)] = (jsx as any)[key]
-    } else if (key === 'sf-for' || key === 'sf-each') {
-      dom.modifiers.iterate = {
-        select: (jsx as any)['sf-for'],
-        each: (jsx as any)['sf-each']
+    for (const child of all) {
+      if (typeof child === 'string' || typeof child === 'number') {
+        content.push(() => child.toString())
+      } else if (typeof child === 'function') {
+        content.push(child)
+      } else if (typeof child === 'object') {
+        children.push(child)
+      } else {
+        throw new Error(`JSX does not support typeof of ${typeof child} element`)
       }
-    } else if (key === 'sf-text') {
-      dom.modifiers.text = (jsx as any)['sf-text']
-    } else if (key === 'sf-if') {
-      dom.modifiers.conditional = (jsx as any)['sf-if']
-    } else if (key.startsWith('sf-on-')) {
-      dom.modifiers.events = dom.modifiers.events || {};
-      (dom.modifiers.events as any)[key.slice('sf-on-'.length)] = (jsx as any)[key]
-    } else if (key.startsWith('sf-')) {
-      dom.modifiers.properties = dom.modifiers.properties || {};
-      (dom.modifiers.properties as any)[key.slice('sf-'.length)] = (jsx as any)[key]
-    } else if (key !== 'children') {
-      (dom.properties as any)[key] = (jsx as any)[key]
     }
+
+    return { content, children }
   }
 
-  return dom
+  public static map_properties<V, K extends keyof HTMLElementTagNameMap>(jsx: Partial<JSXElementProperties<V, K>>): Required<Properties<V, K>> {
+    const jsx_properties = jsx as any
+    const dom_properties: Required<Omit<Properties<V, K>, 'name' | 'text'>> = {
+      styles: {},
+      modifiers: {},
+      properties: {},
+      events: {}
+    }
+
+    for (const property in jsx) {
+      if (property.startsWith(COMMON_EVENT_PROPERTY_PREFIX)) {
+        this.patch(dom_properties.events, property.slice(COMMON_EVENT_PROPERTY_PREFIX.length), jsx_properties[property])
+      } else if (property.startsWith(DELEGATE_EVENT_PROPERTY_PREFIX)) {
+        dom_properties.modifiers.events = dom_properties.modifiers.events || {}
+        this.patch(dom_properties.modifiers.events, property.slice(DELEGATE_EVENT_PROPERTY_PREFIX.length), jsx_properties[property])
+      } else if (property === DYNAMIC_PROPERTY_CONDITIONAL) {
+        this.patch(dom_properties.modifiers, DYNAMIC_PROPERTY_CONDITIONAL_MAP, jsx_properties[property])
+      } else if (DYNAMIC_PROPERTY_CYCLES.includes(property)) {
+        dom_properties.modifiers.iterate = {
+          select: jsx_properties[DYNAMIC_PROPERTY_CYCLES[0]],
+          each: jsx_properties[DYNAMIC_PROPERTY_CYCLES[1]]
+        }
+      } else if (property.startsWith(DYNAMIC_PROPERTY_PREFIX)) {
+        dom_properties.modifiers.properties = dom_properties.modifiers.properties || {}
+        this.patch(dom_properties.modifiers.properties, property.slice(DYNAMIC_PROPERTY_PREFIX.length), jsx_properties[property])
+      } else {
+        this.patch(dom_properties.properties, property, jsx_properties[property])
+      }
+    }
+
+    return dom_properties as Required<Properties<V, K>>
+  }
 }
 
-const jsxdom: JSXDescriptions = {} as JSXDescriptions
+export type JSXDOMRegistry = {
+  [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXElementProperties<V, K>>, all: any[]) => AnyDOM<V>
+}
+
+export const JSXDOM_REGISTRY = Object.create(null) as JSXDOMRegistry
 
 for (const tag of HTML_TAGS) {
-  (jsxdom as any)[tag] = <V>(properties: Partial<JSXProperties<V, typeof tag>>) => dom[tag](map_jsx_to_dom(properties), properties.children ?? [])
+  (JSXDOM_REGISTRY as any)[tag] = <T>(context: Partial<JSXElementProperties<T, typeof tag>>, all: any[]) => {
+    const { content, children } = JSXDOMUtilities.outsort_children<T>(all)
+    const properties = JSXDOMUtilities.map_properties<T, typeof tag>(context)
+
+    properties.modifiers.text = (context: T) => content.map(site => site(context)).join(String())
+    properties.name = tag
+
+    return describe(properties, children)
+  }
 }
-
-jsxdom['$'] = dom.$
-
-export { jsxdom }
