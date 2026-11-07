@@ -130,6 +130,7 @@ class BenchmarkApplicationController {
       this._view.items.swap(1, 998)
       this._view.items.mutate(1, mutator(1))
       this._view.items.mutate(998, mutator(998))
+      this._stillflow.commit()
     }
   }
 
