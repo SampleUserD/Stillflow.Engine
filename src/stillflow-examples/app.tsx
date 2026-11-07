@@ -1,73 +1,229 @@
-import { adapters, Stillflow, State, Collection } from "../index.js"
+import { Stillflow, Collection, State, Batcher, operators, adapters } from "../index.js"
+import { buildData } from "./data.js"
 
-const stillflow = new Stillflow(new State())
 const { jsxdom, DOM } = adapters
 
-const view = stillflow.compile({
-  input: stillflow.variable('input').backref(),
-})
-
-type TodoItem = {
+type BenchmarkItem = {
   id: number,
-  label: string,
-  loaded: boolean
+  index: number,
+  label: string
 }
 
-function Todo() {
+type BenchmarkMapping = {
+  previous_id: number | undefined,
+  current_id: number | undefined,
+  data: BenchmarkItem[]
+}
+
+type FullBenchmarkView = {
+  selection: {
+    current_id: BenchmarkMapping['current_id'],
+    previous_id: BenchmarkMapping['previous_id']
+  },
+  data: BenchmarkMapping['data'],
+  items: Collection<BenchmarkItem>
+}
+
+class BenchmarkApplicationController {
+  private _stillflow = new Stillflow<BenchmarkMapping>(new State(), { strategy: site => requestAnimationFrame(site) })
+  private _clearing = new Batcher(site => requestIdleCallback(site))
+  private _factory = this._stillflow.factory()
+
+  private _view: FullBenchmarkView
+
+  private schedule_clear() {
+    this._view.items.clear()
+
+    this._clearing.task(() => this._view.items.shrink())
+  }
+
+  private deselect() {
+    this._view.selection.current_id = undefined
+    this._view.selection.previous_id = undefined
+    this._stillflow.commit()
+  }
+
+  private create(count: number = 1000) {
+    this.schedule_clear()
+    this.deselect()
+    this.add(count)
+  }
+
+  private get source() {
+    const previous_id = this._stillflow.variable('previous_id')
+    const current_id = this._stillflow.variable('current_id')
+    const data = this._stillflow.variable('data')
+
+    return {
+      selection: operators.link({
+        previous_id: previous_id.backref(),
+        current_id: current_id.backref()
+      }),
+      data: data.backref(),
+      items: operators.is(Collection.name)
+    }
+  }
+
+  public constructor() {
+    this._factory.add(Collection.name, view => new Collection(view.data, 10000))
+
+    const view = this._stillflow.compile(this.source)
+
+    this._view = this._stillflow.instantiate(view, this._factory)
+  }
+
+  public is_selected(id: number) {
+    return this._view.selection.current_id === id
+  }
+
+  public add(count: number = 1000) {
+    this._view.items.join(buildData(count))
+    this._stillflow.commit()
+  }
+
+  public run() {
+    this.create(1000)
+  }
+
+  public run_lots() {
+    this.create(10000)
+  }
+
+  public remove(id: number) {
+    this._view.items.remove(id)
+    this._stillflow.commit()
+  }
+
+  public select(id: number) {
+    const NO_OP = () => { }
+
+    this._view.selection.previous_id = this._view.selection.current_id
+    this._view.selection.current_id = id
+
+    this._view.items.mutate(this._view.selection.previous_id || 0, NO_OP)
+    this._view.items.mutate(id, NO_OP)
+
+    this._stillflow.commit()
+  }
+
+  public clear() {
+    this.schedule_clear()
+    this._stillflow.commit()
+  }
+
+  public update() {
+    const length = this._view.items.size()
+    const mutator = (view: BenchmarkItem) => view.label += ' !!!'
+
+    for (let id = 0; id < length; id += 10) {
+      this._view.items.mutate(this._view.items.index(id), mutator)
+    }
+
+    this._stillflow.commit()
+  }
+
+  public swap() {
+    const size = this._view.items.size()
+    const mutator = (id: number) => (view: BenchmarkItem) => view.index = id
+
+    if (size > 998) {
+      this._view.items.swap(1, 998)
+      this._view.items.mutate(1, mutator(1))
+      this._view.items.mutate(998, mutator(998))
+    }
+  }
+
+  public get items() {
+    return this._view.items
+  }
+
+  public get core() {
+    return this._stillflow
+  }
+}
+
+function BenchmarkApplicationHeader() {
   return (
-    <jsxdom.div sf:if={(context: TodoItem) => context.loaded}>
-      <jsxdom.span>
-        {(context: TodoItem) => context.id + 1}.
-      </jsxdom.span>
-      <jsxdom.span>
-        {(context: TodoItem) => context.label}
-      </jsxdom.span>
-      <jsxdom.button type="button" sf:on-click={(event, context: TodoItem) => remove(context.id)}>
-        X
+    <jsxdom.div className="col-md-6">
+      <jsxdom.h1>Stillflow</jsxdom.h1>
+    </jsxdom.div>
+  )
+}
+
+function BenchmarkApplicationButton(context: { text: string, id: string, handle: () => void }) {
+  return (
+    <jsxdom.div className="col-sm-6 smallpad">
+      <jsxdom.button type="button" className="btn btn-primary btn-block" id={context.id} on:click={context.handle}>
+        {context.text}
       </jsxdom.button>
     </jsxdom.div>
   )
 }
 
-function TodoList<V>(properties: { select: (context: V) => Collection<TodoItem> }) {
-  const { select } = properties
+function BenchmarkApplicationTableRow(context: { controller: BenchmarkApplicationController }) {
+  const { controller } = context
 
   return (
-    <jsxdom.div>
-      <jsxdom.input type="text" sf:value={() => view.input} on:change={event => change(event.currentTarget as HTMLInputElement)} />
-      <jsxdom.button type="button" on:click={() => add()}>Add</jsxdom.button>
-      <jsxdom.div sf:for={select} sf:each={() => <Todo />} />
+    <jsxdom.tr sf:className={(context: BenchmarkItem) => controller.is_selected(context.index) ? "danger" : String()}>
+      <jsxdom.td className="col-md-1">
+        {(context: BenchmarkItem) => context.id}
+      </jsxdom.td>
+      <jsxdom.td className="col-md-4">
+        <jsxdom.a sf:on-click={(event, context: BenchmarkItem) => controller.select(context.index)}>
+          {(context: BenchmarkItem) => context.label}
+        </jsxdom.a>
+      </jsxdom.td>
+      <jsxdom.td className="col-md-1">
+        <jsxdom.a sf:on-click={(event, context: BenchmarkItem) => controller.remove(context.index)}>
+          <jsxdom.span ariaHidden="true" className="glyphicon glyphicon-remove"/>
+        </jsxdom.a>
+      </jsxdom.td>
+      <jsxdom.td className="col-md-6"/>
+    </jsxdom.tr>
+  )
+}
+
+function BenchmarkApplicationTable(context: { controller: BenchmarkApplicationController }) {
+  const { controller } = context
+  
+  return (
+    <jsxdom.table className="table table-hover table-striped test-data">
+      <jsxdom.tbody sf:for={() => controller.items} sf:each={() => <BenchmarkApplicationTableRow controller={controller} />} />
+    </jsxdom.table>
+  )
+}
+
+function BenchmarkApplicationView(context: { controller: BenchmarkApplicationController }) {
+  const { controller } = context
+
+  return (
+    <jsxdom.div id="app" className="container">
+      <jsxdom.div className="jumbotron">
+        <jsxdom.div className="row">
+          <BenchmarkApplicationHeader />
+          <jsxdom.div className="row">
+            <jsxdom.div className="col-md-6">
+              <BenchmarkApplicationButton text="Create 1,000 rows" id="run" handle={() => controller.run()}/>
+              <BenchmarkApplicationButton text="Create 10,000 rows" id="runlots" handle={() => controller.run_lots()} />
+              <BenchmarkApplicationButton text="Append 1,000 rows" id="add" handle={() => controller.add()} />
+              <BenchmarkApplicationButton text="Update every 10th row" id="update" handle={() => controller.update()} />
+              <BenchmarkApplicationButton text="Clear" id="clear" handle={() => controller.clear()} />
+              <BenchmarkApplicationButton text="Swap rows" id="swaprows" handle={() => controller.swap()} />
+            </jsxdom.div>
+          </jsxdom.div>
+        </jsxdom.div>
+      </jsxdom.div>
+      <BenchmarkApplicationTable controller={controller}/>
+      <jsxdom.span ariaHidden="true" className="preloadicon glyphicon glyphicon-remove"/>
     </jsxdom.div>
   )
 }
 
-const items = new Collection<TodoItem>([], 1000)
+const controller = new BenchmarkApplicationController()
 
-const { element, update } = new DOM<{ items: typeof items }>().$(<TodoList select={(context: { items: Collection<TodoItem> }) => context.items} />)
+const { element, update } = new DOM().$(<BenchmarkApplicationView controller={controller} />)
+
+controller.core.on(() => update({}))
 
 document.body.appendChild(element)
-
-function remove(id: number) {
-  items.remove(id)
-  update({ items })
-}
-
-function add() {
-  const id = items.total_size
-  items.add({ id, label: view.input, loaded: false })
-  view.input = String()
-  stillflow.commit()
-
-  if (id % 10 === 0) {
-    items.mutate(id, view => view.loaded = true)
-  }
-
-  update({ items })
-}
-
-function change(input: HTMLInputElement) {
-  view.input = input.value
-  stillflow.commit()
-}
-
-update({ items })
+update({})
