@@ -108,6 +108,8 @@ export class Appliers<V> {
   }
 
   private apply_iterate(id: number, payload: Modifiers<V>['iterate']): Applier<V> {
+    const SPACE = " "
+
     const node = payload!.each()
 
     const compiler = new Compiler<unknown>()
@@ -169,7 +171,7 @@ export class Appliers<V> {
 
       if (cleares) {
         pool = pool.concat(bindings.splice(0))
-        target.innerHTML = String()
+        target.innerHTML = SPACE
       }
 
       if (adds > 0) {

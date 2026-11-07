@@ -57,7 +57,8 @@ function $ProcessLocals(source: IR, view: Mapping): void {
 
 function $ProcessLinks<T extends Mapping>(kernel: Kernel<T>, source: IR, view: Mapping): void {
   for (const key in source.links) {
-    view[key] = $Compile(kernel, source.links[key])
+    view[key] = view[key] || {}
+    $Process(kernel, source.links[key], view[key])
   }
 }
 
@@ -89,6 +90,7 @@ function $Process<T extends Mapping>(kernel: Kernel<T>, source: IR, view: Meta):
 
 export function $ProcessWrite<T extends Mapping>(kernel: Kernel<T>, source: IR, view: Mapping): void {
   $ProcessBackrefs(kernel, source, view)
+  $ProcessLinks(kernel, source, view)
 }
 
 export function $ProcessRead<T extends Mapping>(kernel: Kernel<T>, source: IR, view: Mapping) {

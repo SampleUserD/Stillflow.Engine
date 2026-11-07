@@ -1,7 +1,7 @@
 import { Stillflow, Collection, State, Batcher, operators, adapters } from "../index.js"
 import { buildData } from "./data.js"
 
-const { jsxdom, DOM } = adapters
+const { jsxdom, jsx, DOM } = adapters
 
 type BenchmarkItem = {
   id: number,
