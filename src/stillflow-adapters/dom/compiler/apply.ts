@@ -140,7 +140,7 @@ export class Appliers<V> {
         }
 
         if (items_count < child_count) {
-          for (let index = child_count - 1; index >= items_count; index--) {
+          for (let index = items_count; index < child_count; index++) {
             pool.push(bindings[index])
 
             bindings[index].remove()
