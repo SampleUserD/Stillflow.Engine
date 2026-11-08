@@ -2,7 +2,6 @@
 dist/
 node_modules/
 css/ 
-images/
 *.css
 *.html
 *.txt
