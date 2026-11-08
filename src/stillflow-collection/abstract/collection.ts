@@ -19,9 +19,9 @@ export interface AbstractCollection<T> {
 
   mark_removed(index: number): void
 
-  get size(): number
+  mark_removed_range(left: number, right: number): void
 
-  get total(): number
+  get size(): number
 
   get capacity(): number
 }

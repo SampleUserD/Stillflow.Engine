@@ -62,6 +62,14 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
     this._base.mark_removed(index)
   }
 
+  public mark_removed_range(left: number, right: number): void {
+    for (let index = left; index <= right; index++) {
+      this._delta.removes.add(index)
+    }
+
+    this._base.mark_removed_range(left, right)
+  }
+
   public flush(): Delta {
     this._delta.replaces = (this._delta.addes > 0) && (this._delta.clears)
 
@@ -74,10 +82,6 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
 
   public get size(): number {
     return this._base.size
-  }
-
-  public get total(): number {
-    return this._base.total
   }
 
   public get capacity(): number {

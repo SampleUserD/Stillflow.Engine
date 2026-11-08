@@ -1,12 +1,9 @@
 export class Fenwick {
-  private _tree: number[]
+  private _tree: Int32Array
 
-  public constructor(private _size: number, old_tree: number[] = []) {
-    this._tree = old_tree.concat(new Array(this._size - old_tree.length).fill(0))
-  }
-
-  public get(index: number): number {
-    return this._tree[index]
+  public constructor(private _size: number, old: Int32Array = new Int32Array(0)) {
+    this._tree = new Int32Array(this._size + 1)
+    this._tree.set(old)
   }
 
   public add(start: number, delta: number): void {
@@ -18,7 +15,7 @@ export class Fenwick {
   public count(end: number): number {
     let amount = 0
 
-    for (let index = end; index > 0; index -= index & -index) {
+    for (let index = end + 1; index > 0; index -= index & -index) {
       amount += this._tree[index]
     }
 

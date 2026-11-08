@@ -65,9 +65,11 @@ class BenchmarkApplicationController {
   }
 
   public constructor() {
-    this._factory.add(FlushableCollection.name, view => new FlushableCollection(new FenwickCollection(10000)))
+    const collection = new FlushableCollection(new FenwickCollection(10000))
 
     const view = this._stillflow.compile(this.source)
+
+    this._factory.add(FlushableCollection.name, view => collection)
 
     this._view = this._stillflow.instantiate(view, this._factory)
   }

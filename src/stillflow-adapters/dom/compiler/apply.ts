@@ -131,7 +131,7 @@ export class Appliers<V> {
       const { replaces, clears, addes, swaps, removes, updates } = items.flush()
 
       if (replaces) {
-        const items_count = items.total
+        const items_count = items.size
         const child_count = bindings.length
         const common_count = Math.min(items_count, child_count)
 
@@ -140,14 +140,14 @@ export class Appliers<V> {
         }
 
         if (items_count < child_count) {
-          for (let index = items_count; index < child_count; index++) {
+          for (let index = child_count - 1; index >= items_count; index--) {
             pool.push(bindings[index])
 
             bindings[index].remove()
           }
 
           bindings.length = items_count
-        } else {
+        } else if (child_count < items_count) {
           const fragment = document.createDocumentFragment()
           const elements = new Array<HTMLElement>(items_count - child_count)
 
@@ -156,7 +156,7 @@ export class Appliers<V> {
 
             applier(element as HTMLElement, items.at(index))
 
-            elements[index] = element as HTMLElement
+            elements[index - child_count] = element as HTMLElement
 
             fragment.appendChild(element)
           }

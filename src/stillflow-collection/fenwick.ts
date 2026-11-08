@@ -5,11 +5,11 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   private static GROW = 2
   private static REMOVE_COUNT = 1
 
-  private _removes = new Set<number>()
-
-  private _data: T[]
+  private _removes: Set<number> = new Set()
   private _tree: Fenwick
+
   private _shift: number = 0
+  private _data: T[]
 
   public constructor(private _size: number = 1) {
     this._data = new Array<T>()
@@ -21,7 +21,30 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   }
 
   public map(id: number): number {
-    return id - this._tree.count(id)
+    let physical_index = 0
+    let step = 1
+
+    // Находим наибольшую степень двойки <= size
+    while (step * 2 <= this._size) {
+      step *= 2
+    }
+
+    for (let index = step; index > 0; index >>= 1) {
+      const next = physical_index + index
+
+      // Не выходим за границы данных
+      if (next <= this._data.length) {
+        // count(next) теперь корректен благодаря двойному Фенвику
+        const removed = this._tree.count(next)
+        const logical = next - removed
+
+        if (logical <= id) {
+          physical_index = next
+        }
+      }
+    }
+
+    return physical_index + this._shift
   }
 
   public set(index: number, value: T): void {
@@ -45,9 +68,9 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   }
 
   public attach(value: T[]): void {
-    const index = this._data.length + value.length - 1
-
     this._data = this._data.concat(value)
+
+    const index = this._data.length
 
     while (index >= this._size) {
       this._tree = this._tree.grow(this._size)
@@ -63,35 +86,46 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     this._data.splice(0, this._shift)
     this._shift = 0
 
-    for (const index of this._removes) {
-      this._data.splice(index, FenwickCollection.REMOVE_COUNT)
-    }
-  }
+    const removes = Array.from(this._removes).sort((i, j) => j - i)
 
-  public mark_cleared(): void {
-    for (const index of this._removes) {
-      this._tree.add(index, -FenwickCollection.REMOVE_COUNT)
+    for (const id of removes) {
+      this._data.splice(id, 1)
     }
 
     this._removes.clear()
+
+    this._size = this._data.length + 1
+    this._tree = new Fenwick(this._size)
+  }
+
+  public mark_cleared(): void {
     this._shift = this._data.length
+    this._size = this._data.length + 1
+
+    this._removes.clear()
+
+    this._tree = new Fenwick(this._size)
   }
 
   public mark_removed(index: number): void {
-    if (this._removes.has(index)) {
+    this.mark_removed_range(index, index)
+  }
+
+  public mark_removed_range(left: number, right: number): void {
+    if (left > right) {
       return
     }
 
-    this._tree.add(index, FenwickCollection.REMOVE_COUNT)
-    this._removes.add(index)
+    for (let index = left; index <= right; index++) {
+      if (this._removes.has(index) === false) {
+        this._tree.add(index, FenwickCollection.REMOVE_COUNT)
+        this._removes.add(index)
+      }
+    }
   }
 
   public get size(): number {
-    return this.total - this._tree.count(this.total)
-  }
-
-  public get total(): number {
-    return this._data.length - this._shift
+    return this._data.length - this._shift - this._tree.count(this._data.length - this._shift)
   }
 
   public get capacity(): number {
