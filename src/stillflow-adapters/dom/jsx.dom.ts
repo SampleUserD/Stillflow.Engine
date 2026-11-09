@@ -116,17 +116,19 @@ for (const tag of HTML_TAGS) {
     const { static_content, dynamic_content, children } = JSXDOMUtilities.outsort_children<T>(all)
     const properties = JSXDOMUtilities.map_properties<T, typeof tag>(context)
 
-    properties.modifiers.text = (context: T) => {
-      let contents = String()
-
-      for (const site of dynamic_content) {
-        contents += site(context)
-      }
-
-      return contents
-    }
-
     properties.text = static_content.join(String())
+
+    if (dynamic_content.length > 0) {
+      properties.modifiers.text = (context: T) => {
+        let contents = String()
+
+        for (const site of dynamic_content) {
+          contents += site(context)
+        }
+
+        return contents
+      }
+    }
 
     properties.name = tag
 
