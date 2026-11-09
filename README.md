@@ -30,6 +30,9 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
  ## Quick Start
 
 ### Let's make some simple Todo application
+
+For a starter you can play with (it)[https://codesandbox.io/p/sandbox/stillflow-engine-starter-3qv9mh]. Simple demonstration of the features of **Stillflow**.
+
 ```ts
 import { Stillflow, State, FenwickCollection, FlushableCollection, operators, adapters } from 'stillflow.engine'
 
