@@ -127,12 +127,16 @@ export class Appliers<V> {
 
     const template = transform(node)
     const compilation = compiler.compile(node)
-    const applier = appliers.apply(compilation)
 
     let bindings = new Array<HTMLElement>()
     let pool = new Array<HTMLElement>()
+    let applier: ReturnType<typeof appliers.apply>
 
     return (root: HTMLElement, context: V) => {
+      if (applier === undefined) {
+        applier = appliers.apply(compilation)
+      }
+
       const items = payload!.select(context)
 
       const nodes = (root as any)[SF_CACHE]

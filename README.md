@@ -10,9 +10,9 @@ I built **Stillflow** to solve my own architectural problems. I wanted explicit 
 
 I think it is a **misconception** that `UI = f(state)`, because every `UI` has *user and document events* (`click`, `input`, `load` and *etc.*). So I derive that `state = g(UI)`, where `g` **is not** an inverse function of `f`, because we cannot restore *state* from `UI` fully in the most cases, because **UI is a subset of state**. 
 
-Also I think of a `state` as  a `global state` and a simple `"map"` ([Read about it here](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)) with filled with `primitives` (`number`, `string`, `object` and `array`, but not `symbol`, `function` or `class instances`) as I call it `"map-state"`. You could have thought that it is antipattern and a bad practice so it is out of consideration. But it makes the `state` the **single source of truth** so we can restore `UI` from the *state* fully [`UI = f(state)`]. The *map-state* makes the *serialization* of *state* easier and predictable.
+Also I think of a `state` as  a `global state` and a simple `"map"` ([Read about it here](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)) filled with `primitives` (`number`, `string`, `object` and `array`, but not `symbol`, `function` or `class instances`) as I call it `"map-state"`. You could have thought that it is antipattern and a bad practice so it is out of consideration. But it makes the `state` the **single source of truth** so we can restore `UI` from the *state* fully [`UI = f(state)`]. The *map-state* makes the *serialization* of *state* easier and predictable.
 
-Also I think that **explicit reactivity is better than implicit reactivity**. So **Stillflow** has *`commit()` method that controls the update time. Before *commit* buffer is full, but changes are not applied to the *map-state*. It makes *state-between-state* an impossible occurense. It makes the **Stillflow** model transactional and atomic.
+Also I think that **explicit reactivity is better than implicit reactivity**. So **Stillflow** has `commit()` method that controls the update time. Before *commit* buffer is full, but changes are not applied to the *map-state*. It makes *state-between-state* an impossible occurrence. It makes the **Stillflow** model transactional and atomic.
 
 ## Features
 
@@ -87,11 +87,11 @@ function TodoItem() {
 function App() {
   return (
     <jsxdom.div>
-      <jsxdom.input sf: value={(context: TodoState) => context.input} on: change={change} />
-      <jsxdom.button on: click={add}>
+      <jsxdom.input sf:value={(context: TodoState) => context.input} on: change={change} />
+      <jsxdom.button on:click={add}>
         Add
       </jsxdom.button>
-      <jsxdom.div sf: for={(context: TodoState) => context.items} sf: each={() => <TodoItem />} />
+      <jsxdom.div sf:for={(context: TodoState) => context.items} sf:each={() => <TodoItem />} />
     </jsxdom.div>
   )
 }

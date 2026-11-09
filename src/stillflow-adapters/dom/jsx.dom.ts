@@ -14,8 +14,9 @@ const DYNAMIC_PROPERTY_CYCLES = [`${DYNAMIC_PROPERTY_PREFIX}for`, `${DYNAMIC_PRO
 const DYNAMIC_PROPERTY_CONDITIONAL = `${DYNAMIC_PROPERTY_PREFIX}if`
 const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
 const COMMON_EVENT_PROPERTY_PREFIX = `on:`
+const COMMON_STYLES_PROPERTY = 'styles'
 
-type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: HTMLElementTagNameMap[K]['style'] }
+type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']> }
 type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style'>
 type ElementServicePropertiesWithoutPrefix<V> = {
   'if': (context: V) => boolean,
@@ -92,6 +93,8 @@ class JSXDOMUtilities {
       } else if (property.startsWith(DYNAMIC_PROPERTY_PREFIX)) {
         dom_properties.modifiers.properties = dom_properties.modifiers.properties || {}
         this.patch(dom_properties.modifiers.properties, property.slice(DYNAMIC_PROPERTY_PREFIX.length), jsx_properties[property])
+      } else if (property === COMMON_STYLES_PROPERTY) {
+        this.patch(dom_properties, property, jsx_properties[property])
       } else {
         this.patch(dom_properties.properties, property, jsx_properties[property])
       }
