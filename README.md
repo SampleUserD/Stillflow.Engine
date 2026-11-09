@@ -24,8 +24,8 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
  
 ## Benchmarks
 
-**Stillflow** performs within *7,5-9% of VanillaJS* in the Krause benchmark on my notepad, while providing a full transactional state model.
-![Benchmark scores of Stillflow](images/2.png)
+**Stillflow** performs within *7,5-9% of VanillaJS* in the Krause benchmark on my notepad, while providing a full transactional state model. I run benchmark on JSX and DOM versions of my framework. You can see results below.
+![Benchmark scores of Stillflow](images/3.png)
 
  ## Quick Start
 
