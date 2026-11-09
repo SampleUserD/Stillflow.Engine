@@ -1,5 +1,5 @@
 import { Binding } from "../binding.js"
-import { AnyDOM } from "./dom.js"
+import { AnyDOM } from "./types.js"
 import { Properties } from "./properties/properties.js"
 import { HTML_TAGS } from "./tags.js"
 import { describe } from "./description/describe.js"

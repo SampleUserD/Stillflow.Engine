@@ -1,5 +1,5 @@
 import { FlushableCollection } from "../../../index.js"
-import { AnyDOM } from "../dom.js"
+import { AnyDOM } from "../types.js"
 
 export type Modifiers<Context, K extends keyof HTMLElementTagNameMap = any> = Partial<{
   text: (context: Context) => string,

@@ -1,21 +1,40 @@
 {
-  "type": "module",
   "name": "stillflow.engine",
-  "main": "dist/index.js",
-  "author": {
-    "name": "Saitov Denis",
-    "email": "hecntv140@gmail.com"
+  "version": "0.1.2",
+  "description": "A headless, transaction-based UI engine with AOT compilation.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "ui",
+    "framework",
+    "transactional",
+    "aot",
+    "headless",
+    "typescript",
+    "dom"
+  ],
+  "author": "SampleUserD",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SampleUserD/Stillflow.Engine.git"
   },
+  "bugs": {
+    "url": "https://github.com/SampleUserD/Stillflow.Engine/issues"
+  },
+  "homepage": "https://github.com/SampleUserD/Stillflow.Engine#readme",
   "scripts": {
-    "test": "vitest ./src/stillflow-tests",
-    "watch": "tsc --watch",
     "build": "tsc --build",
-    "gen:tags": "npx tsx src/stillflow-scripts/gen-tags.ts",
-    "publish": "npm run build"
+    "watch": "tsc --watch",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "typescript": "^5.0.0"
   }
 }

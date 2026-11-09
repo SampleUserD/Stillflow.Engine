@@ -1,4 +1,4 @@
-import { DOM } from "../dom.js"
+import { DOM } from "../types.js"
 
 function apply_text<V, K extends keyof HTMLElementTagNameMap>(description: DOM<V, K>, root: HTMLElementTagNameMap[K]) {
   const text = description.properties.text || String()

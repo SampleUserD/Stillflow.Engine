@@ -13,7 +13,7 @@ type TodoState = {
   items: FlushableCollection<TodoItem>
 }
 
-const { jsxdom, DOM } = adapters
+const { jsxdom, dom } = adapters
 
 const state = new State()
 const stillflow = new Stillflow<AppState>(state)
@@ -60,7 +60,7 @@ function App() {
   )
 }
 
-const { element: app, update } = new DOM().$(<App />)
+const { element: app, update } = dom.$(<App />)
 
 stillflow.on(() => update(instance))
 

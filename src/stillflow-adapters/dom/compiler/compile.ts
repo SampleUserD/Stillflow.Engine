@@ -1,4 +1,4 @@
-import { AnyDOM } from "../dom.js"
+import { AnyDOM } from "../types.js"
 import { Modifiers } from "../properties/modifiers.js"
 
 export type Instructions<V> = Partial<{ [L in keyof Modifiers<V>]: Modifiers<V>[L] }> & { id: number }

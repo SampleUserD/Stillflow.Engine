@@ -8,7 +8,7 @@ I built **Stillflow** to solve my own architectural problems. I wanted explicit 
 
 > UI = State + Projections + Bindings + Feedback loop.
 
-I think it is a **misconception** that `UI = f(state)`, because every `UI` has *user and document events* (`click`, `input`, `load` and *etc.*). So I derive that `state = g(UI)`, where `g` **is not** and inverse function of `f`, because we cannot restore *state* from `UI` fully in the most cases, because **UI is a subset of state**. 
+I think it is a **misconception** that `UI = f(state)`, because every `UI` has *user and document events* (`click`, `input`, `load` and *etc.*). So I derive that `state = g(UI)`, where `g` **is not** an inverse function of `f`, because we cannot restore *state* from `UI` fully in the most cases, because **UI is a subset of state**. 
 
 Also I think of a `state` as  a `global state` and a simple `"map"` ([Read about it here](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)) with filled with `primitives` (`number`, `string`, `object` and `array`, but not `symbol`, `function` or `class instances`) as I call it `"map-state"`. You could have thought that it is antipattern and a bad practice so it is out of consideration. But it makes the `state` the **single source of truth** so we can restore `UI` from the *state* fully [`UI = f(state)`]. The *map-state* makes the *serialization* of *state* easier and predictable.
 
@@ -24,29 +24,29 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
  
 ## Benchmarks
 
-**Stillflow** performs within *1% of VanillaJS* in the Krause benchmark on my notepad in the Krause benchmark, while providing a full transactional state model.
+**Stillflow** performs within *1% of VanillaJS* in the Krause benchmark on my notepad, while providing a full transactional state model.
 ![Benchmark scores of Stillflow](images/1.png)
 
  ## Quick Start
 
 ### Let's make some simple Todo application
 ```ts
-import { Stillflow, State, FenwickCollection, FlushableCollection, operators, adapters } from 'stillflow'
+import { Stillflow, State, FenwickCollection, FlushableCollection, operators, adapters } from 'stillflow.engine'
 
 type AppState = {
-	input: string
+  input: string
 }
 
 type TodoItem = {
-	label: string
+  label: string
 }
 
 type TodoState = {
-	input: string,
-	items: FlushableCollection<TodoItem>
+  input: string,
+  items: FlushableCollection<TodoItem>
 }
 
-const { jsxdom, DOM } = adapters
+const { jsxdom, dom } = adapters
 
 const state = new State()
 const stillflow = new Stillflow<AppState>(state)
@@ -55,45 +55,45 @@ const factory = stillflow.factory()
 factory.add(FlushableCollection.name, () => new FlushableCollection(new FenwickCollection(100)))
 
 const source = {
-	input: stillflow.variable('input').backref(),
-	items: operators.is(FlushableCollection.name)
+  input: stillflow.variable('input').backref(),
+  items: operators.is(FlushableCollection.name)
 }
 
 const view = stillflow.compile(source)
 const instance: TodoState = stillflow.instantiate(view, factory)
 
 function change(event: any) {
-	instance.input = event.target.value
-	stillflow.commit()
+  instance.input = event.target.value
+  stillflow.commit()
 }
 
 function add() {
-	instance.items.add({ label: instance.input })
-	instance.input = String()
-	stillflow.commit()
+  instance.items.add({ label: instance.input })
+  instance.input = String()
+  stillflow.commit()
 }
 
 function TodoItem() {
-	return (
-		<jsxdom.div>
-			{(context: TodoItem) => context.label}
-		</jsxdom.div>
-	)
+  return (
+    <jsxdom.div>
+      {(context: TodoItem) => context.label}
+    </jsxdom.div>
+  )
 }
 
 function App() {
-	return (
-		<jsxdom.div>
-			<jsxdom.input sf:value={(context: TodoState) => context.input} on:change={change}/>
-			<jsxdom.button on:click={add}>
-				Add
-			</jsxdom.button>
-			<jsxdom.div sf:for={(context: TodoState) => context.items} sf:each={() => <TodoItem />}/>
-		</jsxdom.div>
-	)
+  return (
+    <jsxdom.div>
+      <jsxdom.input sf: value={(context: TodoState) => context.input} on: change={change} />
+      <jsxdom.button on: click={add}>
+        Add
+      </jsxdom.button>
+      <jsxdom.div sf: for={(context: TodoState) => context.items} sf: each={() => <TodoItem />} />
+    </jsxdom.div>
+  )
 }
 
-const { element: app, update } = new DOM().$(<App />)
+const { element: app, update } = dom.$(<App />)
 
 stillflow.on(() => update(instance))
 

@@ -1,7 +1,7 @@
 import { Stillflow, State, Batcher, operators, adapters, FlushableCollection, FenwickCollection } from "../index.js"
 import { buildData } from "./data.js"
 
-const { jsxdom, jsx, DOM } = adapters
+const { jsxdom, dom } = adapters
 
 type BenchmarkItem = {
   id: number,
@@ -224,7 +224,7 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
 
 const controller = new BenchmarkApplicationController()
 
-const { element, update } = new DOM().$(<BenchmarkApplicationView controller={controller} />)
+const { element, update } = dom.$(<BenchmarkApplicationView controller={controller} />)
 
 controller.core.on(() => update({}))
 
