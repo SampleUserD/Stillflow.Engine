@@ -25,8 +25,8 @@ type FullBenchmarkView = {
 }
 
 class BenchmarkApplicationController {
-  private _stillflow = new Stillflow<BenchmarkMapping>(new State(), { strategy: site => requestAnimationFrame(site) })
-  private _clearing = new Batcher(site => requestIdleCallback(site))
+  private _stillflow = new Stillflow<BenchmarkMapping>(new State())
+  private _clearing = new Batcher(site => site())
   private _factory = this._stillflow.factory()
 
   private _view: FullBenchmarkView
@@ -40,7 +40,6 @@ class BenchmarkApplicationController {
   private deselect() {
     this._view.selection.current_id = undefined
     this._view.selection.previous_id = undefined
-    this._stillflow.commit()
   }
 
   private create(count: number = 1000) {

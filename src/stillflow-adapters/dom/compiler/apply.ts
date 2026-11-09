@@ -2,6 +2,7 @@ import { Modifiers } from "../properties/modifiers.js"
 import { Template, Compiler } from "./compile.js"
 import { transform } from "./transform.js"
 
+const SF_CACHED_TEXTNODE = '__stillflow_cache_textnode__'
 const SF_LISTENED = '__stillflow_listened__'
 const SF_CONTEXT = '__stillflow_context__'
 const SF_CACHE = '__stillflow_cache__'
@@ -67,7 +68,16 @@ export class Appliers<V> {
       const nodes = (root as any)[SF_CACHE]
       const element = nodes[id]
 
-      element.firstChild!.nodeValue = text
+      let textnode = element[SF_CACHED_TEXTNODE]
+
+      if (textnode === undefined) {
+        textnode = element.firstChild
+        element[SF_CACHED_TEXTNODE] = textnode
+      }
+
+      if (textnode !== null) {
+        textnode.nodeValue = text
+      }
     }
   }
 
@@ -108,7 +118,7 @@ export class Appliers<V> {
   }
 
   private apply_iterate(id: number, payload: Modifiers<V>['iterate']): Applier<V> {
-    const SPACE = " "
+    const SPACE = String()
 
     const node = payload!.each()
 
@@ -233,59 +243,39 @@ export class Appliers<V> {
 
   public apply(template: Template<V>): Applier<V> {
     const { instructions, paths } = template
-    const appliers = {
-      text: new Array<Applier<V>>(),
-      iterate: new Array<Applier<V>>(),
-      events: new Array<Applier<V>>(),
-      properties: new Array<Applier<V>>(),
-      conditional: new Array<Applier<V>>()
-    }
+    const appliers = new Array<Applier<V>>(instructions.length)
+
+    let fill_index = 0
 
     for (let index = 0; index < instructions.length; index++) {
       const instruction = instructions[index]
       const id = instruction.id
 
       if (instruction.text !== undefined) {
-        appliers.text.push(this.apply_text(id, instruction.text))
+        appliers[fill_index++] = this.apply_text(id, instruction.text)
       }
 
       if (instruction.iterate !== undefined) {
-        appliers.iterate.push(this.apply_iterate(id, instruction.iterate))
+        appliers[fill_index++] = this.apply_iterate(id, instruction.iterate)
       }
 
       if (instruction.events !== undefined) {
-        appliers.events.push(this.apply_events(id, instruction.events))
+        appliers[fill_index++] = this.apply_events(id, instruction.events)
       }
 
       if (instruction.properties !== undefined) {
-        appliers.properties.push(this.apply_properties(id, instruction.properties))
+        appliers[fill_index++] = this.apply_properties(id, instruction.properties)
       }
 
       if (instruction.conditional !== undefined) {
-        appliers.conditional.push(this.apply_conditional(id, instruction.conditional))
+        appliers[fill_index++] = this.apply_conditional(id, instruction.conditional)
       }
     }
 
     return (root: HTMLElement, context: V) => {
       this.markup(root, paths)
 
-      for (const applier of appliers.text) {
-        applier(root, context)
-      }
-
-      for (const applier of appliers.events) {
-        applier(root, context)
-      }
-
-      for (const applier of appliers.properties) {
-        applier(root, context)
-      }
-
-      for (const applier of appliers.iterate) {
-        applier(root, context)
-      }
-
-      for (const applier of appliers.conditional) {
+      for (const applier of appliers) {
         applier(root, context)
       }
     }
