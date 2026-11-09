@@ -2,9 +2,9 @@ import { Modifiers } from "../properties/modifiers.js"
 import { Template, Compiler } from "./compile.js"
 import { transform } from "./transform.js"
 
-const SF_CACHED_TEXTNODE = '__stillflow_cache_textnode__'
 const SF_LISTENED = '__stillflow_listened__'
 const SF_CONTEXT = '__stillflow_context__'
+const SF_CACHE_TEXT = '__stillflow_cache_text__'
 const SF_CACHE = '__stillflow_cache__'
 
 type Applier<V> = (root: HTMLElement, context: V) => void
@@ -64,20 +64,10 @@ export class Appliers<V> {
   private apply_text(id: number, payload: Modifiers<V>['text']): Applier<V> {
     return (root: HTMLElement, context: V) => {
       const text = payload!(context)
+      const nodes = (root as any)[SF_CACHE_TEXT]
+      const textnode = nodes[id]
 
-      const nodes = (root as any)[SF_CACHE]
-      const element = nodes[id]
-
-      let textnode = element[SF_CACHED_TEXTNODE]
-
-      if (textnode === undefined) {
-        textnode = element.firstChild
-        element[SF_CACHED_TEXTNODE] = textnode
-      }
-
-      if (textnode !== null) {
-        textnode.nodeValue = text
-      }
+      textnode.nodeValue = text
     }
   }
 
@@ -190,13 +180,12 @@ export class Appliers<V> {
 
       if (addes > 0) {
         const fragment = document.createDocumentFragment()
-        const old_size = bindings.length
         const elements = new Array<HTMLElement>(addes)
 
         for (let index = 0; index < addes; index++) {
           const element = template.cloneNode(true)
 
-          applier(element as HTMLElement, items.at(index + old_size))
+          applier(element as HTMLElement, items.at(index))
 
           elements[index] = element as HTMLElement
 
@@ -235,12 +224,15 @@ export class Appliers<V> {
     }
 
     const cache = new Array<HTMLElement>(paths.length)
+    const text_cache = new Array<Text>(paths.length)
 
     for (let id = 0; id < paths.length; id++) {
       cache[id] = this.find_element_by(root, paths[id])
+      text_cache[id] = cache[id].firstChild as Text
     }
 
     node[SF_CACHE] = cache
+    node[SF_CACHE_TEXT] = text_cache
 
     return cache
   }

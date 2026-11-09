@@ -50,14 +50,15 @@ class JSXDOMUtilities {
   }
 
   public static outsort_children<V>(all: any[]) {
-    const content = new Array<ElementDynamicContent<V>>()
+    const dynamic_content = new Array<ElementDynamicContent<V>>()
+    const static_content = new Array<string>()
     const children = new Array<Binding<any>>()
 
     for (const child of all) {
       if (typeof child === 'string' || typeof child === 'number') {
-        content.push(() => child.toString())
+        static_content.push(child.toString())
       } else if (typeof child === 'function') {
-        content.push(child)
+        dynamic_content.push(child)
       } else if (typeof child === 'object') {
         children.push(child)
       } else {
@@ -65,7 +66,7 @@ class JSXDOMUtilities {
       }
     }
 
-    return { content, children }
+    return { static_content, dynamic_content, children }
   }
 
   public static map_properties<V, K extends keyof HTMLElementTagNameMap>(jsx: Partial<JSXElementProperties<V, K>>): Required<Properties<V, K>> {
@@ -112,10 +113,21 @@ export const JSXDOM_REGISTRY = Object.create(null) as JSXDOMRegistry
 
 for (const tag of HTML_TAGS) {
   (JSXDOM_REGISTRY as any)[tag] = <T>(context: Partial<JSXElementProperties<T, typeof tag>>, all: any[]) => {
-    const { content, children } = JSXDOMUtilities.outsort_children<T>(all)
+    const { static_content, dynamic_content, children } = JSXDOMUtilities.outsort_children<T>(all)
     const properties = JSXDOMUtilities.map_properties<T, typeof tag>(context)
 
-    properties.modifiers.text = (context: T) => content.map(site => site(context)).join(String())
+    properties.modifiers.text = (context: T) => {
+      let contents = String()
+
+      for (const site of dynamic_content) {
+        contents += site(context)
+      }
+
+      return contents
+    }
+
+    properties.text = static_content.join(String())
+
     properties.name = tag
 
     return describe(properties, children)
