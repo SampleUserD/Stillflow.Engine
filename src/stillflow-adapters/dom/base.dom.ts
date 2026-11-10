@@ -2,7 +2,7 @@ import { HTML_TAGS } from "./tags.js"
 import { AnyDOM, DOM } from "./types.js"
 import { Properties } from "./properties/properties.js"
 import { Compiler } from "./compiler/compile.js"
-import { Appliers } from "./compiler/apply.js"
+import { Appliers, Listeners, Pool } from "./compiler/apply.js"
 import { transform } from "./compiler/transform.js"
 import { describe } from "./description/describe.js"
 import { Binding } from "../binding.js"
@@ -12,23 +12,25 @@ type PropertiesWithoutServices<V, K extends keyof HTMLElementTagNameMap> = Omit<
 export type DOMRegistry = {
   [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<PropertiesWithoutServices<V, K>>, children?: Binding<any>[]) => AnyDOM<V>
 } & {
-  $: <V>(root: AnyDOM<V>) => { element: HTMLElement, update: (context: V) => void }
+  $: <V>(root: AnyDOM<V>) => { element: HTMLElement, update: (context: V) => void, clean: () => void }
 }
 
 export const DOM_REGISTRY = Object.create(null) as DOMRegistry
 
 DOM_REGISTRY.$ = function $<V>(root: AnyDOM<V>) {
   const element = transform(root)
+  const pool = new Pool(new Listeners())
 
   const compiler = new Compiler<V>()
   const compilation = compiler.compile(root)
 
-  const appliers = new Appliers<V>()
+  const appliers = new Appliers<V>(pool)
   const applier = appliers.apply(compilation)
 
   const update = (context: V) => applier(element, context)
+  const clean = () => pool.tick()
 
-  return { element, update }
+  return { element, update, clean }
 }
 
 for (const tag of HTML_TAGS) {

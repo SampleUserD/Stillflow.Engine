@@ -7,7 +7,7 @@ const SF_CONTEXT = '__stillflow_context__'
 const SF_CACHE_TEXT = '__stillflow_cache_text__'
 const SF_CACHE = '__stillflow_cache__'
 
-class Listeners {
+export class Listeners {
   private _listeners = new WeakMap<HTMLElement, Map<string, (event: Event, context: any) => void>>()
   private _actives = new Set<string>()
 
@@ -54,7 +54,7 @@ class Listeners {
   }
 }
 
-class Pool {
+export class Pool {
   private static TIME_TO_EVICT = 2
 
   private _hots: { root: HTMLElement, frame: number }[] = []
@@ -115,8 +115,11 @@ class Pool {
 
   public tick(): void {
     this.evict()
-    console.log(this._frame)
     this._frame++
+  }
+
+  public get listeners() {
+    return this._listeners
   }
 }
 
@@ -131,7 +134,7 @@ class CollectionApplier<V> {
     const node = this._payload!.each()
 
     const compiler = new Compiler<unknown>()
-    const appliers = new Appliers<unknown>()
+    const appliers = new Appliers<unknown>(this._pool)
 
     const template = transform(node)
     const compilation = compiler.compile(node)
@@ -139,20 +142,6 @@ class CollectionApplier<V> {
     this._appliers = appliers
     this._compilation = compilation
     this._template = template
-
-    const pool = this._pool
-
-    function schedule() {
-      requestIdleCallback(function clean(deadline) {
-        if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
-          pool.tick()
-        }
-
-        schedule()
-      }, { timeout: 1000 })
-    }
-
-    schedule()
   }
 
   public apply(root: HTMLElement, context: V): void {
@@ -259,7 +248,11 @@ class CollectionApplier<V> {
 type Applier<V> = (root: HTMLElement, context: V) => void
 
 export class Appliers<V> {
-  private _listeners = new Listeners()
+  private _listeners: Listeners
+
+  public constructor(private _pool: Pool) {
+    this._listeners = this._pool.listeners
+  }
 
   private find_element_by(root: HTMLElement, path: number[]): HTMLElement {
     let current = root
@@ -322,8 +315,7 @@ export class Appliers<V> {
   }
 
   private apply_iterate(id: number, payload: Modifiers<V>['iterate']): Applier<V> {
-    const pool = new Pool(this._listeners)
-    const appliers = new CollectionApplier<V>(pool, id, payload)
+    const appliers = new CollectionApplier<V>(this._pool, id, payload)
 
     return (root, context) => appliers.apply(root, context)
   }
