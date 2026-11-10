@@ -32,6 +32,10 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 
 ![Benchmark scores of Stillflow](images/1.png)
 
+**Stillflow** memory usage score is below
+
+![Memory usage of Stillflow](images/m1.png)
+
  ## Quick Start
 
 ### Let's make some simple Todo application
