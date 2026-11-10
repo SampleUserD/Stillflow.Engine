@@ -29,7 +29,8 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 *Note 1*: In specific operations like `remove row`, **Stillflow** is up to 1.8-2x than *VanillaJS* due to its delta-based collection and lazy deletion.
 
 *Note 2*: The results of jsx version of **Stillflow** is done without micro- or macro- tasks.
-![Benchmark scores of Stillflow](images/4.png)
+
+![Benchmark scores of Stillflow](images/1.png)
 
  ## Quick Start
 
