@@ -25,7 +25,9 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 ## Benchmarks
 
 **Stillflow** performs within *3-4% of VanillaJS* in the Krause benchmark on my notepad, while providing a full transactional state model. I run benchmark on JSX and DOM versions of my framework. You can see results below. I explicitly removed benchmark-specific optimizations from the data generation to ensure a completely fair comparison.
+
 *Note 1*: In specific operations like `remove row`, **Stillflow** is up to 1.8-2x than *VanillaJS* due to its delta-based collection and lazy deletion.
+
 *Note 2*: The results of jsx version of **Stillflow** is done without micro- or macro- tasks.
 ![Benchmark scores of Stillflow](images/4.png)
 
