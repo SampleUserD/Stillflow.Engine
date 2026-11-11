@@ -42,6 +42,16 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 
 For a starter you can play with [it in **CodeSandBox**](https://codesandbox.io/p/sandbox/stillflow-engine-starter-3qv9mh). Simple demonstration of the features of **Stillflow**.
 
+You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandbox/43vn9g). It shows following results:
+
+| Operation | Dataset Size | Execution Time (State + DOM) |
+| :--- | :--- | :--- |
+| **Append rows** | 10,000 rows | **~57ms** |
+| **Full list swap (sort)** | 10,000 rows | **~40ms max** |
+| **Partial random swaps** | 1,000 pairs | **~6-8ms max** |
+| **Lazy remove every 2nd row** | 10,000 rows (5k removed) | **~24ms max** |
+| **Lazy remove every 2nd row** | 10,000 rows (60k removed) | **~242ms max** ($O(k \log n)$ scaling) |
+
 ```ts
 import { Stillflow, State, FenwickCollection, FlushableCollection, operators, adapters } from 'stillflow.engine'
 

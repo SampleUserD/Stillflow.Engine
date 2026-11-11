@@ -111,7 +111,7 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
     if (instruction.conditional !== undefined) {
       const pIndex = payloads.length
 
-      payloads.push(instruction.text)
+      payloads.push(instruction.conditional)
 
       code += `(function () {`
       code += `const element = root.${SF_CACHE}[${index}];`
@@ -190,7 +190,7 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `const fragment = document.createDocumentFragment();`
       code += `const elements = new Array(addes);`
       code += `for (let index = 0; index < addes; index++) {`
-      code += `const element = ${payload(pIndex)}.template.cloneNode(true);`
+      code += `const element = ${payload(pIndex)}.pool.get() || ${payload(pIndex)}.template.cloneNode(true);`
       code += `${payload(pIndex)}.applier(element, items.at(index));`
       code += `elements[index] = element;`
       code += `fragment.appendChild(element);`
