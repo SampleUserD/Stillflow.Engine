@@ -2,10 +2,11 @@ import { HTML_TAGS } from "./tags.js"
 import { AnyDOM, DOM } from "./types.js"
 import { Properties } from "./properties/properties.js"
 import { Compiler } from "./compiler/compile.js"
-import { Appliers, Listeners, Pool } from "./compiler/apply.js"
+import { Listeners, Pool } from "./compiler/pool.js"
 import { transform } from "./compiler/transform.js"
 import { describe } from "./description/describe.js"
 import { Binding } from "../binding.js"
+import { generate_applier } from "./compiler/apply.generator.js"
 
 type PropertiesWithoutServices<V, K extends keyof HTMLElementTagNameMap> = Omit<Properties<V, K>, 'name'>
 
@@ -24,9 +25,7 @@ DOM_REGISTRY.$ = function $<V>(root: AnyDOM<V>) {
   const compiler = new Compiler<V>()
   const compilation = compiler.compile(root)
 
-  const appliers = new Appliers<V>(pool)
-  const applier = appliers.apply(compilation)
-
+  const applier = generate_applier(compilation, pool)
   const update = (context: V) => applier(element, context)
   const clean = () => pool.tick()
 

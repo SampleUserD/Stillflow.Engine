@@ -11,6 +11,10 @@ export class Buffer<T extends Mapping = Mapping> {
     this._messages.set(path, value)
   }
 
+  public discard(): void {
+    this._messages.clear()
+  }
+
   public commit(state: AbstractState<T>): void {
     for (const [path, value] of this._messages.entries()) {
       state.write(path, value)
