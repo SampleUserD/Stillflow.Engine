@@ -1,17 +1,20 @@
 import { DOM } from "../dom.types.js"
 
 function transform_code<V, K extends keyof HTMLElementTagNameMap>(description: DOM<V, K>, payloads: any[], depth: number = 1): string {
-  let { name, text, properties, styles, events } = description.properties
+  let { name, text, properties, styles, events, modifiers } = description.properties
   let code = String()
 
-  text = text || String()
   styles = styles || Object.create(null)
   events = events || Object.create(null)
   properties = properties || Object.create(null)
 
   code += `let sf_child_node_${depth} = document.createElement("${name}");`
-  code += `let sf_text_node_${depth} = document.createTextNode("${text}");`
-  code += `sf_child_node_${depth}.appendChild(sf_text_node_${depth});`
+
+  if (text !== undefined || modifiers?.text !== undefined) {
+    code += `let sf_text_node_${depth} = document.createTextNode("${text}");`
+    code += `sf_child_node_${depth}.appendChild(sf_text_node_${depth});`
+  }
+
   code += `sf_child_node_${depth - 1}.appendChild(sf_child_node_${depth});`
 
   for (const key in styles) {
