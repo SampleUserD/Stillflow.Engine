@@ -1,35 +1,50 @@
 import { HTML_TAGS } from "./tags.js"
-import { AnyDOM, DOM } from "./types.js"
+import { AnyDOM, DOM } from "./aot/dom.types.js"
 import { Properties } from "./properties/properties.js"
-import { Compiler } from "./compiler/compile.js"
-import { Listeners, Pool } from "./compiler/pool.js"
-import { transform } from "./compiler/transform.js"
+import { transform } from "./aot/transformers/transform.js"
 import { describe } from "./description/describe.js"
 import { Binding } from "../binding.js"
-import { generate_applier } from "./compiler/apply.generator.js"
+import { apply } from "./aot/appliers/apply.js"
+import { EventDelegator } from "./aot/dom.delegator.js"
+import { Pool } from "./aot/dom.pool.js"
+
+const DELEGATOR = new EventDelegator()
 
 type PropertiesWithoutServices<V, K extends keyof HTMLElementTagNameMap> = Omit<Properties<V, K>, 'name'>
+
+type Options = {
+  gc: (site: () => void) => void
+}
 
 export type DOMRegistry = {
   [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<PropertiesWithoutServices<V, K>>, children?: Binding<any>[]) => AnyDOM<V>
 } & {
-  $: <V>(root: AnyDOM<V>) => { element: HTMLElement, update: (context: V) => void, clean: () => void }
+  $: <V>(root: AnyDOM<V>, options?: Options) => { element: HTMLElement, update: (context: V) => void }
 }
 
 export const DOM_REGISTRY = Object.create(null) as DOMRegistry
 
-DOM_REGISTRY.$ = function $<V>(root: AnyDOM<V>) {
+DOM_REGISTRY.$ = function $<V>(root: AnyDOM<V>, options: Options = { gc: site => site() }) {
+  const pool = new Pool()
   const element = transform(root)
-  const pool = new Pool(new Listeners())
+  const applier = apply(root, DELEGATOR, pool)
 
-  const compiler = new Compiler<V>()
-  const compilation = compiler.compile(root)
+  let cleaning = false
 
-  const applier = generate_applier(compilation, pool)
-  const update = (context: V) => applier(element, context)
-  const clean = () => pool.tick()
+  const update = (context: V) => {
+    if (!cleaning) {
+      cleaning = true
 
-  return { element, update, clean }
+      options.gc(() => {
+        pool.tick()
+        cleaning = false
+      })
+    }
+
+    applier(element, context)
+  }
+
+  return { element, update }
 }
 
 for (const tag of HTML_TAGS) {

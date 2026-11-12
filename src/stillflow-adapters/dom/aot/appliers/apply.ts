@@ -1,54 +1,24 @@
-import { Pool } from "./pool.js"
-import { Compiler, Template } from "./compile.js"
-import { transform } from "./transform.js"
-
-const SF_LISTENED = '__stillflow_listened__'
-const SF_CONTEXT = '__stillflow_context__'
-const SF_CACHE_TEXT = '__stillflow_cache_text__'
-const SF_CACHE = '__stillflow_cache__'
+import { Pool } from "../dom.pool.js"
+import { transform } from "../transformers/transform.js"
+import { EventDelegator } from "../dom.delegator.js"
+import { compile, markup_template, Instructions } from "../compiler/compile.js"
+import { SF_CACHE, SF_CACHE_TEXT, SF_LISTENED, SF_CONTEXT, SF_HANDLERS } from "../dom.symbols.js"
+import { AnyDOM } from "../dom.types.js"
 
 type Applier<T> = (root: HTMLElement, context: T) => void
 
-function find_element_by(root: HTMLElement, path: number[]): HTMLElement {
-  let current = root
-
-  for (let id = 0; id < path.length; id++) {
-    current = current.children[path[id]] as HTMLElement
-  }
-
-  return current
-}
-
-function markup(root: HTMLElement, paths: number[][]): HTMLElement[] {
-  const node = root as any
-
-  if (node[SF_CACHE]) {
-    return node[SF_CACHE]
-  }
-
-  const cache = new Array<HTMLElement>(paths.length)
-  const text_cache = new Array<Text>(paths.length)
-
-  for (let id = 0; id < paths.length; id++) {
-    cache[id] = find_element_by(root, paths[id])
-    text_cache[id] = cache[id].firstChild as Text
-  }
-
-  node[SF_CACHE] = cache
-  node[SF_CACHE_TEXT] = text_cache
-
-  return cache
-}
-
-export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<V> {
-  const { instructions, paths } = template
+export function apply<V>(node: AnyDOM<V>, delegator: EventDelegator, pool: Pool): Applier<V> {
+  const instructions = compile(node)
 
   const payload = (id: number) => `p${id}`
-  const payloads: any[] = [markup, paths]
+  const payloads: any[] = [markup_template(node)]
 
   let code = `return function(root, context) {\n`
+  let labels = 0
 
-  code += `${payload(0)}(root, ${payload(1)});`
+  code += `${payload(0)}(root);`
+  code += `let sf_node_cache = root.${SF_CACHE};`
+  code += `let sf_text_cache = root.${SF_CACHE_TEXT};`
 
   for (let id = 0; id < instructions.length; id++) {
     const instruction = instructions[id]
@@ -59,22 +29,22 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
 
       payloads.push(instruction.text)
 
-      code += `(function() {`
-      code += `const textnode = root.${SF_CACHE_TEXT}[${index}];`
-      code += `if (textnode !== null) textnode.nodeValue = ${payload(pIndex)}(context);`
-      code += `})();`
+      code += `iter_${labels++}: {`
+      code += `const textnode = sf_text_cache[${index}];`
+      code += `textnode.data = ${payload(pIndex)}(context);`
+      code += `}`
     }
 
     if (instruction.events !== undefined) {
-      code += `(function() {`
-      code += `const element = root.${SF_CACHE}[${index}];`
+      code += `iter_${labels++}: {`
+      code += `const element = sf_node_cache[${index}];`
       code += `if (!element.${SF_LISTENED}) {`
       code += `element.${SF_LISTENED} = true;`
       code += `element.${SF_CONTEXT} = context;`
 
       const pIndexRoot = payloads.length
 
-      payloads.push(pool.listeners)
+      payloads.push(delegator)
 
       for (const key in instruction.events) {
         const pIndex = payloads.length
@@ -88,13 +58,12 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `else {`
       code += `element.${SF_CONTEXT} = context;`
       code += '}'
-      code += '})();'
+      code += '}'
     }
 
     if (instruction.properties !== undefined) {
-      code += `(function() {`
-      code += `const element = root.${SF_CACHE}[${index}];`
-      code += `if (element !== undefined) {`
+      code += `iter_${labels++}: {`
+      code += `const element = sf_node_cache[${index}];`
 
       for (const key in instruction.properties) {
         const pIndex = payloads.length
@@ -104,8 +73,7 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
         code += `element.${key} = ${payload(pIndex)}(context);`
       }
 
-      code += `}`
-      code += '})();'
+      code += '}'
     }
 
     if (instruction.conditional !== undefined) {
@@ -113,35 +81,34 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
 
       payloads.push(instruction.conditional)
 
-      code += `(function () {`
-      code += `const element = root.${SF_CACHE}[${index}];`
+      code += `iter_${labels++}: {`
+      code += `const element = sf_node_cache[${index}];`
       code += `const condition = ${payload(pIndex)}(context);`
       code += `element.style.display = condition ? String() : 'none'`
-      code += '})();'
+      code += '}'
     }
 
     if (instruction.iterate !== undefined) {
       const node = instruction.iterate.each()
-
-      const compiler = new Compiler<unknown>()
-
       const template = transform(node)
 
       const pIndex = payloads.length
 
       payloads.push({
-        compilation: compiler.compile(node),
+        node,
         elements: [],
         template,
         applier: undefined,
         select: instruction.iterate.select,
-        generator: generate_applier,
+        generator: apply,
+        delegator,
         pool
       })
 
-      code += `(function () {`
+      code += `iter_${labels++}: {`
       code += `if (${payload(pIndex)}.applier === undefined) {`
-      code += `${payload(pIndex)}.applier = ${payload(pIndex)}.generator(${payload(pIndex)}.compilation, ${payload(pIndex)}.pool)`
+      code += `${payload(pIndex)}.applier = ${payload(pIndex)}.generator(${payload(pIndex)}.node, ${payload(pIndex)}.delegator, ${payload(pIndex)}.pool);`
+      code += `${payload(pIndex)}.applier(${payload(pIndex)}.template);`
       code += '}'
       code += `const items = ${payload(pIndex)}.select(context);`
       code += `const target = root.${SF_CACHE}[${index}];`
@@ -167,6 +134,8 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `const elements = new Array(items_count - child_count);`
       code += `for (let index = child_count; index < items_count; index++) {`
       code += `const element = ${payload(pIndex)}.pool.get() || ${payload(pIndex)}.template.cloneNode(true);`
+      code += `element.${SF_HANDLERS} = ${payload(pIndex)}.template.${SF_HANDLERS};`
+      code += `element.${SF_CONTEXT} = items.at(index);`
       code += `${payload(pIndex)}.applier(element, items.at(index));`
       code += `elements[index - child_count] = element;`
       code += `fragment.appendChild(element);`
@@ -175,12 +144,13 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `${payload(pIndex)}.elements = ${payload(pIndex)}.elements.concat(elements);`
       code += `target.appendChild(fragment);`
       code += `}`
-      code += `return;`
+      code += `break iter_${labels - 1};`
       code += `}`
 
       code += `if (clears) {`
       code += `const free = ${payload(pIndex)}.elements.splice(0);`
       code += `for (const element of free) {`
+      code += `element.${SF_HANDLERS} = undefined;`
       code += `${payload(pIndex)}.pool.add(element);`
       code += `}`
       code += `target.innerHTML = String();`
@@ -191,6 +161,8 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `const elements = new Array(addes);`
       code += `for (let index = 0; index < addes; index++) {`
       code += `const element = ${payload(pIndex)}.pool.get() || ${payload(pIndex)}.template.cloneNode(true);`
+      code += `element.${SF_HANDLERS} = ${payload(pIndex)}.template.${SF_HANDLERS};`
+      code += `element.${SF_CONTEXT} = items.at(index);`
       code += `${payload(pIndex)}.applier(element, items.at(index));`
       code += `elements[index] = element;`
       code += `fragment.appendChild(element);`
@@ -206,6 +178,7 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
 
       code += `for (const id of removes) {`
       code += `const element = ${payload(pIndex)}.elements[id];`
+      code += `element.${SF_HANDLERS} = undefined;`
       code += `${payload(pIndex)}.pool.add(element);`
       code += `element.remove();`
       code += `}`
@@ -213,7 +186,7 @@ export function generate_applier<V>(template: Template<V>, pool: Pool): Applier<
       code += `for (const id of updates) {`
       code += `${payload(pIndex)}.applier(${payload(pIndex)}.elements[id], items.at(id));`
       code += `}`
-      code += `})();`
+      code += `}`
     }
   }
 

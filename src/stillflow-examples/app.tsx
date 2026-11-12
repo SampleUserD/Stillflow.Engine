@@ -1,4 +1,4 @@
-import { Stillflow, State, Batcher, operators, adapters, FlushableCollection, FenwickCollection } from "../index.js"
+import { Stillflow, State, Batcher, operators, adapters, collection } from "../index.js"
 import { buildData } from "./data.js"
 
 const { jsxdom, dom } = adapters
@@ -21,7 +21,7 @@ type FullBenchmarkView = {
     previous_id: BenchmarkMapping['previous_id']
   },
   data: BenchmarkMapping['data'],
-  items: FlushableCollection<BenchmarkItem>
+  items: collection.Flushable<BenchmarkItem>
 }
 
 class BenchmarkApplicationController {
@@ -59,16 +59,16 @@ class BenchmarkApplicationController {
         current_id: current_id.backref()
       }),
       data: data.backref(),
-      items: operators.is(FlushableCollection.name)
+      items: operators.is(collection.Flushable.name)
     }
   }
 
   public constructor() {
-    const collection = new FlushableCollection(new FenwickCollection(10000))
+    const col = new collection.Flushable(new collection.Fenwick(10000))
 
     const view = this._stillflow.compile(this.source)
 
-    this._factory.add(FlushableCollection.name, view => collection)
+    this._factory.add(collection.Flushable.name, view => col)
 
     this._view = this._stillflow.instantiate(view, this._factory)
   }
@@ -91,7 +91,10 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
-    this._view.items.mark_removed(id)
+    for (let index = 0, size = this._view.items.size; index < size; index += 2) {
+      this._view.items.mark_removed(index)
+    }
+
     this._stillflow.commit()
   }
 
