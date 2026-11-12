@@ -7,6 +7,19 @@ import { AnyDOM } from "../dom.types.js"
 
 type Applier<T> = (root: HTMLElement, context: T) => void
 
+const ANY = new Proxy({}, {
+  get(target, name) {
+    if (name === 'toString') {
+      return () => String()
+    }
+
+    return ANY
+  },
+  apply(target, thisArg, argArray) {
+    return ANY
+  }
+})
+
 export function apply<V>(node: AnyDOM<V>, delegator: EventDelegator, pool: Pool): Applier<V> {
   const instructions = compile(node)
 
@@ -96,6 +109,7 @@ export function apply<V>(node: AnyDOM<V>, delegator: EventDelegator, pool: Pool)
 
       payloads.push({
         node,
+        any: ANY,
         elements: [],
         template,
         applier: undefined,
@@ -106,11 +120,11 @@ export function apply<V>(node: AnyDOM<V>, delegator: EventDelegator, pool: Pool)
       })
 
       code += `iter_${labels++}: {`
+      code += `const items = ${payload(pIndex)}.select(context);`
       code += `if (${payload(pIndex)}.applier === undefined) {`
       code += `${payload(pIndex)}.applier = ${payload(pIndex)}.generator(${payload(pIndex)}.node, ${payload(pIndex)}.delegator, ${payload(pIndex)}.pool);`
-      code += `${payload(pIndex)}.applier(${payload(pIndex)}.template);`
+      code += `${payload(pIndex)}.applier(${payload(pIndex)}.template, ${payload(pIndex)}.any);`
       code += '}'
-      code += `const items = ${payload(pIndex)}.select(context);`
       code += `const target = root.${SF_CACHE}[${index}];`
       code += `const { replaces, clears, addes, swaps, removes, updates } = items.flush();`
       code += `if (replaces) {`

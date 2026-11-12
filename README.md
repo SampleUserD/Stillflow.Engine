@@ -53,7 +53,7 @@ You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandb
 | **Lazy remove every 2nd row** | 10,000 rows (60k removed) | **~242ms max** ($O(k \log n)$ scaling) |
 
 ```ts
-import { Stillflow, State, FenwickCollection, FlushableCollection, operators, adapters } from 'stillflow.engine'
+import { Stillflow, State, collection, operators, adapters } from 'stillflow.engine'
 
 type AppState = {
   input: string
@@ -65,7 +65,7 @@ type TodoItem = {
 
 type TodoState = {
   input: string,
-  items: FlushableCollection<TodoItem>
+  items: collection.Flushable<TodoItem>
 }
 
 const { jsxdom, dom } = adapters
@@ -74,11 +74,11 @@ const state = new State()
 const stillflow = new Stillflow<AppState>(state)
 const factory = stillflow.factory()
 
-factory.add(FlushableCollection.name, () => new FlushableCollection(new FenwickCollection(100)))
+factory.add(collection.Flushable.name, () => new collection.Flushable(new collection.Fenwick(100)))
 
 const source = {
   input: stillflow.variable('input').backref(),
-  items: operators.is(FlushableCollection.name)
+  items: operators.is(collection.Flushable.name)
 }
 
 const view = stillflow.compile(source)
