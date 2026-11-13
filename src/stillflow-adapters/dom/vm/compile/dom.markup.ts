@@ -1,4 +1,4 @@
-import { SF_CACHE, SF_CACHE_TEXT } from "../utilities/dom.symbols.js"
+import { SF_CACHE, SF_CACHE_TEXT } from "../dom.symbols.js"
 import { AnyDOM } from '../dom.types.js'
 
 function markup_template_code<V>(node: AnyDOM<V>, path: number[]): string {

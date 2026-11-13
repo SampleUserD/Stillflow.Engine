@@ -1,4 +1,4 @@
-import { SF_CONTEXT, SF_LISTENED } from "./dom.symbols.js"
+import { SF_CONTEXT, SF_LISTENED } from "../dom.symbols.js"
 
 export class Pool {
   private static TIME_TO_EVICT = 2

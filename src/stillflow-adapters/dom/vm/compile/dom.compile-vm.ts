@@ -4,7 +4,7 @@ import { Codes } from "../dom.codes.js"
 import { Context } from "./dom.context.js"
 import { Template } from "../dom.template.js"
 import { EventDelegator } from "../utilities/dom.delegator.js"
-import { SF_CACHE, SF_CACHE_TEXT, SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from "../utilities/dom.symbols.js"
+import { SF_ANY, SF_CACHE, SF_CACHE_TEXT, SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from "../dom.symbols.js"
 import { markup_template } from "./dom.markup.js"
 
 const generators: vm.Config<Context>['generators'] = {
@@ -76,7 +76,7 @@ const generators: vm.Config<Context>['generators'] = {
 
     const item_applier = run_dom_vm(template)
 
-    item_applier(template.root, {})
+    item_applier(template.root, SF_ANY)
 
     const selectIndex = context.payload.add_payload(select)
     const applierIndex = context.payload.add_payload(item_applier)
@@ -146,7 +146,9 @@ const generators: vm.Config<Context>['generators'] = {
     code += `}`
     code += `for (const [i, j] of swaps.entries()) {`
     code += `${applierIndex}(${elementsIndex}[i], items.at(i));`
+    code += `${elementsIndex}[i].${SF_CONTEXT} = items.at(i);`
     code += `${applierIndex}(${elementsIndex}[j], items.at(j));`
+    code += `${elementsIndex}[j].${SF_CONTEXT} = items.at(j);`
     code += `}`
     code += `for (const id of removes) {`
     code += `const element = ${elementsIndex}[id];`

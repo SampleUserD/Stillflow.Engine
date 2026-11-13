@@ -123,7 +123,7 @@ for (const tag of HTML_TAGS) {
         let contents = String()
 
         for (const site of dynamic_content) {
-          contents += site(context) ?? String()
+          contents += site(context)
         }
 
         return contents
