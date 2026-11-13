@@ -8,7 +8,7 @@
     "skipLibCheck": true,
     "declaration": true,
     "declarationDir": "./dist",
-    "jsxFactory": "adapters.jsx",
+    "jsxFactory": "vm.jsx",
     "jsx": "react",
     "types": [
       "node"

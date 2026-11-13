@@ -1,4 +1,6 @@
-import { Stillflow, State, collection, operators, adapters } from '../index.js'
+import { core, vm, collection, operators, adapters } from '../index.js'
+
+const { Stillflow, State, Batcher } = core
 
 type AppState = {
   input: string

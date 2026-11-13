@@ -6,6 +6,24 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": [
+      "./dist/index.js"
+    ],
+    "./adapters": [
+      "./dist/index.js"
+    ],
+    "./core": [
+      "./dist/index.js"
+    ],
+    "./vm": [
+      "./dist/index.js"
+    ],
+    "./collection": [
+      "./dist/index.js"
+    ]
+  },
   "files": [
     "dist",
     "README.md"

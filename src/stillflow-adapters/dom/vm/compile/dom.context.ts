@@ -5,6 +5,7 @@ import { EventDelegator } from "../utilities/dom.delegator.js"
 
 export type Context = {
   node: AnyDOM<any>,
+  nodes: AnyDOM<any>[],
   payload: vm.Payload,
   strings: string[]
   functions: Function[],

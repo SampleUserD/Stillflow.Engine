@@ -1,15 +1,18 @@
-import { Binding } from "../binding.js"
+import * as vm from '../../stillflow-vm/index.js'
+
+import { Binding } from "../../stillflow-vm/binding.js"
 import { AnyDOM } from "./vm/dom.types.js"
 import { Properties } from "./properties/properties.js"
 import { HTML_TAGS } from "./tags.js"
 import { describe } from "./description/describe.js"
-import { collection } from "../../index.js"
+import * as collection from "../../stillflow-collection/index.js"
 
 type ElementDynamicContent<V> = (context: V) => string
 
 const DYNAMIC_PROPERTY_CONDITIONAL_MAP = 'conditional'
 
 const DYNAMIC_PROPERTY_PREFIX = `sf:`
+const DYNAMIC_PROPERTY_SWITCH = `${DYNAMIC_PROPERTY_PREFIX}vm`
 const DYNAMIC_PROPERTY_CYCLES = [`${DYNAMIC_PROPERTY_PREFIX}for`, `${DYNAMIC_PROPERTY_PREFIX}each`]
 const DYNAMIC_PROPERTY_CONDITIONAL = `${DYNAMIC_PROPERTY_PREFIX}if`
 const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
@@ -19,9 +22,10 @@ const COMMON_STYLES_PROPERTY = 'styles'
 type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']> }
 type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style'>
 type ElementServicePropertiesWithoutPrefix<V> = {
+  'vm': (context: V) => (node: AnyDOM<V>) => vm.Target<HTMLElement, V>,
   'if': (context: V) => boolean,
   'for': (context: V) => collection.Flushable<unknown>,
-  'each': () => AnyDOM<V>
+  'each': () => AnyDOM<V>,
 }
 type ElementServicePropertiesWithPrefix<V> = {
   [K in keyof ElementServicePropertiesWithoutPrefix<V> as `${typeof DYNAMIC_PROPERTY_PREFIX}${K}`]: ElementServicePropertiesWithoutPrefix<V>[K]
@@ -91,6 +95,8 @@ class JSXDOMUtilities {
           select: jsx_properties[DYNAMIC_PROPERTY_CYCLES[0]],
           each: jsx_properties[DYNAMIC_PROPERTY_CYCLES[1]]
         }
+      } else if (property === DYNAMIC_PROPERTY_SWITCH) {
+        this.patch(dom_properties.modifiers, DYNAMIC_PROPERTY_SWITCH.slice(DYNAMIC_PROPERTY_PREFIX.length), jsx_properties[property])
       } else if (property.startsWith(DYNAMIC_PROPERTY_PREFIX)) {
         dom_properties.modifiers.properties = dom_properties.modifiers.properties || {}
         this.patch(dom_properties.modifiers.properties, property.slice(DYNAMIC_PROPERTY_PREFIX.length), jsx_properties[property])

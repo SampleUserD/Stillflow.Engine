@@ -4,11 +4,12 @@ import { AnyDOM } from "../dom.types.js"
 import { Template } from "../dom.template.js"
 import { transform } from "../transform/dom.transform.js"
 
-export function compile(node: AnyDOM<any>): Template {
+export function compile<Context>(node: AnyDOM<Context>): Template {
   const emitter = new vm.Emitter()
   const strings = new vm.Payload()
   const functions = new vm.Payload()
   const templates = new vm.Payload()
+  const nodes = new vm.Payload()
 
   let next_node_id = 0
 
@@ -20,10 +21,11 @@ export function compile(node: AnyDOM<any>): Template {
     const has_text = modifiers?.text !== undefined
     const has_for = modifiers?.iterate !== undefined
     const has_if = modifiers?.conditional !== undefined
+    const has_vm = modifiers?.vm !== undefined
 
     let current_id = -1
 
-    if (has_properties || has_events || has_text || has_for || has_if) {
+    if (has_properties || has_events || has_text || has_for || has_if || has_vm) {
       current_id = next_node_id++
     }
 
@@ -59,6 +61,19 @@ export function compile(node: AnyDOM<any>): Template {
       emitter.emit(Codes.IF, current_id, functionIndex)
     }
 
+    if (has_vm) {
+      if (node.children.length > 1) {
+        throw new Error(`Too much children for "sf:vm". Expected 1, but got ${node.children.length}`)
+      }
+
+      const selectIndex = functions.add(modifiers!.vm)
+      const nodeIndex = nodes.add(node.children[0])
+
+      emitter.emit(Codes.VM, current_id, selectIndex, nodeIndex)
+
+      return
+    }
+
     if (has_for) {
       const iterate = modifiers!.iterate!
 
@@ -81,6 +96,7 @@ export function compile(node: AnyDOM<any>): Template {
   return {
     node,
     root: transform(node),
+    nodes: nodes.values,
     strings: strings.values,
     bytecode: emitter.finish(),
     functions: functions.values,

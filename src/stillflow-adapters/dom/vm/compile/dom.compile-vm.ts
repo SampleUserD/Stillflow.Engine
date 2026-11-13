@@ -1,4 +1,5 @@
 import * as vm from "../../../../stillflow-vm/index.js"
+
 import { Pool } from "../utilities/dom.pool.js"
 import { Codes } from "../dom.codes.js"
 import { Context } from "./dom.context.js"
@@ -8,6 +9,43 @@ import { SF_ANY, SF_CACHE, SF_CACHE_TEXT, SF_CONTEXT, SF_HANDLERS, SF_LISTENED }
 import { markup_template } from "./dom.markup.js"
 
 const generators: vm.Config<Context>['generators'] = {
+  [Codes.VM](bytecode, offset, context) {
+    const anchor = bytecode[offset + 2]
+    const select = context.functions[bytecode[offset + 2]]
+    const node = context.nodes[bytecode[offset + 3]]
+
+    const selectIndex = context.payload.add_payload(select)
+    const nodeIndex = context.payload.add_payload(node)
+
+    const slotIndex = context.payload.add_payload({
+      active: undefined as undefined | vm.Compiler,
+      cache: new Map<vm.Compiler, any>()
+    })
+
+    let code = String()
+
+    code += `{`
+    code += `const compile = ${selectIndex}(context);`
+    code += `if (${slotIndex}.active !== undefined) {`
+    code += `${slotIndex}.active.root.remove();`
+    code += `}`
+    code += `let next = ${slotIndex}.cache.get(compile);`
+    code += `if (next === undefined) {`
+    code += `next = compile(${nodeIndex});`
+    code += `${slotIndex}.cache.set(compile, next);`
+    code += `}`
+    code += `${slotIndex}.active = next;`
+    code += `if (next !== undefined) {`
+    code += `const anchor = sf_node_cache[${anchor}];`
+    code += `anchor.parentNode.insertBefore(next.root, anchor);`
+    code += `}`
+    code += `if (${slotIndex}.active !== undefined) {`
+    code += `${slotIndex}.active.applier(${slotIndex}.active.root, context);`
+    code += `}`
+    code += `}`
+
+    return code
+  },
   [Codes.PROPERTY](bytecode, offset, context) {
     const container = bytecode[offset + 2]
     const property = context.strings[bytecode[offset + 3]]
@@ -172,6 +210,7 @@ const DELEGATOR = new EventDelegator()
 const create_context = (payload: vm.Payload, input: Template) => {
   return {
     node: input.node,
+    nodes: input.nodes,
     payload,
     strings: input.strings,
     functions: input.functions,
