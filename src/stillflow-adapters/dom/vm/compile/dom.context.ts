@@ -1,4 +1,4 @@
-import { vm } from "../../../../index.js"
+import * as vm from "../../../../stillflow-vm/index.js"
 import { Template } from "../dom.template.js"
 import { AnyDOM } from "../dom.types.js"
 import { EventDelegator } from "../utilities/dom.delegator.js"
