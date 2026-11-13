@@ -8,17 +8,33 @@ function transform_code<V, K extends keyof HTMLElementTagNameMap>(description: D
   events = events || Object.create(null)
   properties = properties || Object.create(null)
 
-  code += `let sf_child_node_${depth} = document.createElement("${name}");`
+  const nameIndex = payloads.length
+
+  payloads.push(name)
+
+  code += `let sf_child_node_${depth} = document.createElement(p${nameIndex});`
 
   if (text !== undefined || modifiers?.text !== undefined) {
-    code += `let sf_text_node_${depth} = document.createTextNode("${text}");`
+    const textIndex = payloads.length
+
+    payloads.push(text)
+
+    code += `let sf_text_node_${depth} = document.createTextNode(p${textIndex});`
     code += `sf_child_node_${depth}.appendChild(sf_text_node_${depth});`
   }
 
   code += `sf_child_node_${depth - 1}.appendChild(sf_child_node_${depth});`
 
   for (const key in styles) {
-    code += `sf_child_node_${depth}.style.${key} = "${(styles as any)[key]}";`
+    const keyIndex = payloads.length
+
+    payloads.push(key)
+
+    const styleIndex = payloads.length
+
+    payloads.push((styles as any)[key])
+
+    code += `sf_child_node_${depth}.style[p${keyIndex}] = p${styleIndex};`
   }
 
   for (const key in events) {
@@ -31,9 +47,16 @@ function transform_code<V, K extends keyof HTMLElementTagNameMap>(description: D
   }
 
   for (const key in properties) {
+    const keyIndex = payloads.length
+
+    payloads.push(key)
+
+    const propertyIndex = payloads.length
     const property = (properties as any)[key]
 
-    code += `sf_child_node_${depth}.${key} = "${property}";`
+    payloads.push(property)
+
+    code += `sf_child_node_${depth}[p${keyIndex}] = p${propertyIndex};`
   }
 
   for (const child of description.children) {

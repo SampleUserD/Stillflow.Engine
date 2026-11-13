@@ -1,4 +1,4 @@
-import { Modifiers } from "./modifiers.js"
+import { Directives } from "../vm/dom.directives.js"
 
 export type Properties<Context, Tag extends keyof HTMLElementTagNameMap> = Partial<{
   name: Tag,
@@ -9,7 +9,7 @@ export type Properties<Context, Tag extends keyof HTMLElementTagNameMap> = Parti
   properties: Partial<{
     [L in keyof Omit<HTMLElementTagNameMap[Tag], 'style'>]: HTMLElementTagNameMap[Tag][L]
   }>,
-  modifiers: Partial<Modifiers<Context, Tag>>,
+  modifiers: Partial<Directives<Context, Tag>>,
   styles: Partial<{
     [L in keyof HTMLElementTagNameMap[Tag]['style']]: HTMLElementTagNameMap[Tag]['style'][L]
   }>

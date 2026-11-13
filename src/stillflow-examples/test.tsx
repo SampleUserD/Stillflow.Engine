@@ -60,11 +60,9 @@ function App() {
   )
 }
 
-const { element: app, update } = dom.$(<App />)
+const update = dom.$(<App />)
 
 stillflow.on(() => update(instance))
 
 instance.input = String()
 stillflow.commit()
-
-document.body.appendChild(app)

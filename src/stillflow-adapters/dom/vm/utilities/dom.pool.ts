@@ -32,7 +32,6 @@ export class Pool {
 
         if (element !== undefined) {
           this._hots.push({ root: element, frame: this._frame })
-          return
         }
       }
     }

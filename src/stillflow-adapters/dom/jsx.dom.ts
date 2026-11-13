@@ -1,5 +1,5 @@
 import { Binding } from "../binding.js"
-import { AnyDOM } from "./aot/dom.types.js"
+import { AnyDOM } from "./vm/dom.types.js"
 import { Properties } from "./properties/properties.js"
 import { HTML_TAGS } from "./tags.js"
 import { describe } from "./description/describe.js"
@@ -123,7 +123,7 @@ for (const tag of HTML_TAGS) {
         let contents = String()
 
         for (const site of dynamic_content) {
-          contents += site(context).toString()
+          contents += site(context) ?? String()
         }
 
         return contents

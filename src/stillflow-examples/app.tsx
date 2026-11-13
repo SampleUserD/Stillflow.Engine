@@ -226,9 +226,8 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
 
 const controller = new BenchmarkApplicationController()
 
-const { element, update } = dom.$(<BenchmarkApplicationView controller={controller} />)
+const update = dom.$(<BenchmarkApplicationView controller={controller} />)
 
 controller.core.on(() => update({}))
 
-document.body.appendChild(element)
 update({})
