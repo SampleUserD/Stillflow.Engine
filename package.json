@@ -11,6 +11,9 @@
     ".": [
       "./dist"
     ],
+    "./main": [
+      "./dist/index.js"
+    ],
     "./adapters": [
       "./dist/index.js"
     ],
