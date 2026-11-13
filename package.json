@@ -9,7 +9,7 @@
   "sideEffects": false,
   "exports": {
     ".": [
-      "./dist/index.js"
+      "./dist"
     ],
     "./adapters": [
       "./dist/index.js"
