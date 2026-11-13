@@ -62,12 +62,12 @@ export function compile<Context>(node: AnyDOM<Context>): Template {
     }
 
     if (has_vm) {
-      if (node.children.length > 1) {
+      if (current.children.length > 1) {
         throw new Error(`Too much children for "sf:vm". Expected 1, but got ${node.children.length}`)
       }
 
       const selectIndex = functions.add(modifiers!.vm)
-      const nodeIndex = nodes.add(node.children[0])
+      const nodeIndex = nodes.add(current.children[0])
 
       emitter.emit(Codes.VM, current_id, selectIndex, nodeIndex)
 
