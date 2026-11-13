@@ -60,7 +60,9 @@ function App() {
   )
 }
 
-const update = dom.$(<App />)
+const update = dom.$(<App />, {
+  container: document.body
+})
 
 stillflow.on(() => update(instance))
 
