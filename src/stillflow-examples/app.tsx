@@ -230,7 +230,6 @@ function custom_compiler(node: AnyDOM<any>): vm.Target {
   return {
     root: document.createElement('canvas'),
     applier(root, context) {
-      document.body.appendChild(root)
       root.getContext('2d').fillRect(0, 0, 100, 100)
     }
   }
