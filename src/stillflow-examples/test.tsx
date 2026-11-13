@@ -1,6 +1,4 @@
-import { core, vm, collection, operators, adapters } from '../index.js'
-
-const { Stillflow, State, Batcher } = core
+import { core, vm, collection, operators, adapters } from 'stillflow.engine'
 
 type AppState = {
   input: string
@@ -17,8 +15,8 @@ type TodoState = {
 
 const { jsxdom, dom } = adapters
 
-const state = new State()
-const stillflow = new Stillflow<AppState>(state)
+const state = new core.State()
+const stillflow = new core.Stillflow<AppState>(state)
 const factory = stillflow.factory()
 
 factory.add(collection.Flushable.name, () => new collection.Flushable(new collection.Fenwick(100)))
@@ -62,9 +60,7 @@ function App() {
   )
 }
 
-const update = dom.$(<App />, {
-  container: document.body
-})
+const update = dom.$(<App />, { container: document.body })
 
 stillflow.on(() => update(instance))
 

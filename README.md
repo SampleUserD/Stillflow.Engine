@@ -53,7 +53,7 @@ You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandb
 | **Lazy remove every 2nd row** | 10,000 rows (60k removed) | **~242ms max** ($O(k \log n)$ scaling) |
 
 ```ts
-import { Stillflow, State, collection, operators, adapters } from 'stillflow.engine'
+import { core, vm, collection, operators, adapters } from 'stillflow.engine'
 
 type AppState = {
   input: string
@@ -70,8 +70,8 @@ type TodoState = {
 
 const { jsxdom, dom } = adapters
 
-const state = new State()
-const stillflow = new Stillflow<AppState>(state)
+const state = new core.State()
+const stillflow = new core.Stillflow<AppState>(state)
 const factory = stillflow.factory()
 
 factory.add(collection.Flushable.name, () => new collection.Flushable(new collection.Fenwick(100)))
