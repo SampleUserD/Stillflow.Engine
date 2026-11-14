@@ -8,24 +8,34 @@
   "types": "./dist/index.d.ts",
   "sideEffects": false,
   "exports": {
-    ".": [
-      "./dist"
-    ],
-    "./main": [
-      "./dist/index.js"
-    ],
-    "./adapters": [
-      "./dist/index.js"
-    ],
-    "./core": [
-      "./dist/index.js"
-    ],
-    "./vm": [
-      "./dist/index.js"
-    ],
-    "./collection": [
-      "./dist/index.js"
-    ]
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./main": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapters": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vm": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./collection": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./jsx-runtime": {
+      "type": "./dist/jsx-runtime.d.ts",
+      "import": "./dist/jsx-runtime.js"
+    }
   },
   "files": [
     "dist",
@@ -51,11 +61,13 @@
   },
   "homepage": "https://github.com/SampleUserD/Stillflow.Engine#readme",
   "scripts": {
-    "build": "tsc --build",
-    "watch": "tsc --watch",
+    "build": "tsc --build && tsc-alias && tsc-esm-fix",
+    "watch": "concurrently \"tsc -w\" \"tsc-alias -w\"",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "tsc-alias": "^1.9.10",
+    "tsc-esm-fix": "^3.1.2",
     "typescript": "^5.0.0"
   }
 }

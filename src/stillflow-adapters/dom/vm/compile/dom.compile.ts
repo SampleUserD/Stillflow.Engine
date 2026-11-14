@@ -1,8 +1,8 @@
-import * as vm from "../../../../stillflow-vm/index.js"
-import { Codes } from "../dom.codes.js"
-import { AnyDOM } from "../dom.types.js"
-import { Template } from "../dom.template.js"
-import { transform } from "../transform/dom.transform.js"
+import * as vm from "@vm/index"
+import { Codes } from "../dom.codes"
+import { AnyDOM } from "../dom.types"
+import { Template } from "../dom.template"
+import { transform } from "../transform/dom.transform"
 
 export function compile<Context>(node: AnyDOM<Context>): Template {
   const emitter = new vm.Emitter()

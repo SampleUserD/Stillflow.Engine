@@ -1,4 +1,4 @@
-import { core, vm, collection, operators, adapters } from 'stillflow.engine'
+import { core, collection, operators, adapters } from '../index.js'
 
 type AppState = {
   input: string

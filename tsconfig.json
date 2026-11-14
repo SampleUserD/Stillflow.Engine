@@ -3,15 +3,29 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "target": "esnext",
-    "module": "nodenext",
-    "moduleResolution": "nodenext",
+    "module": "es2022",
+    "moduleResolution": "bundler",
     "skipLibCheck": true,
     "declaration": true,
     "declarationDir": "./dist",
-    "jsxFactory": "vm.jsx",
-    "jsx": "react",
-    "types": [
-      "node"
-    ]
+    "jsxImportSource": "../",
+    "jsx": "react-jsx",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@vm/*": [
+        "./src/stillflow-vm/*"
+      ],
+      "@collection/*": [
+        "./src/stillflow-collection/*"
+      ],
+      "@adapters/*": [
+        "./src/stillflow-adapters/*"
+      ],
+      "@core/*": [
+        "./src/stillflow/*"
+      ]
+    }
   }
 }

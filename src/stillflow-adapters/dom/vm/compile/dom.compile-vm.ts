@@ -1,12 +1,12 @@
-import * as vm from "../../../../stillflow-vm/index.js"
+import * as vm from "@vm/index"
 
-import { Pool } from "../utilities/dom.pool.js"
-import { Codes } from "../dom.codes.js"
-import { Context } from "./dom.context.js"
-import { Template } from "../dom.template.js"
-import { EventDelegator } from "../utilities/dom.delegator.js"
-import { SF_ANY, SF_CACHE, SF_CACHE_TEXT, SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from "../dom.symbols.js"
-import { markup_template } from "./dom.markup.js"
+import { Pool } from "../utilities/dom.pool"
+import { Codes } from "../dom.codes"
+import { Context } from "./dom.context"
+import { Template } from "../dom.template"
+import { EventDelegator } from "../utilities/dom.delegator"
+import { SF_ANY, SF_CACHE, SF_CACHE_TEXT, SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from "../dom.symbols"
+import { markup_template } from "./dom.markup"
 
 const generators: vm.Config<Context>['generators'] = {
   [Codes.VM](bytecode, offset, context) {

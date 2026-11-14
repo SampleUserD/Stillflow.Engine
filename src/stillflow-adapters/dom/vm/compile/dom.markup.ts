@@ -1,5 +1,5 @@
 import { SF_CACHE, SF_CACHE_TEXT } from "../dom.symbols.js"
-import { AnyDOM } from '../dom.types.js'
+import { AnyDOM } from '../dom.types'
 
 function markup_template_code<V>(node: AnyDOM<V>, path: number[]): string {
   let { modifiers } = node.properties

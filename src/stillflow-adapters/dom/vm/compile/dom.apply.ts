@@ -1,10 +1,10 @@
-import * as vm from '../../../../stillflow-vm/index.js'
+import * as vm from '@vm/index'
 
-import { Properties } from '../../properties/properties.js'
+import { Properties } from '@adapters/dom/properties/properties'
+import { AnyDOM } from "../dom.types"
 
-import { AnyDOM } from "../dom.types.js"
-import { run_dom_vm } from "./dom.compile-vm.js"
-import { compile } from "./dom.compile.js"
+import { run_dom_vm } from "./dom.compile-vm"
+import { compile } from "./dom.compile"
 
 export const apply: vm.Compiler<Properties<any, any>, HTMLElement> = <V>(node: AnyDOM<V>) => {
   const compilation = compile(node)
