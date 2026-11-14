@@ -66,6 +66,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "tsc-alias": "^1.9.10",
     "tsc-esm-fix": "^3.1.2",
     "typescript": "^5.0.0"

@@ -10,6 +10,9 @@
     "declarationDir": "./dist",
     "jsxImportSource": "../",
     "jsx": "react-jsx",
+    "types": [
+      "node"
+    ],
     "paths": {
       "@/*": [
         "./src/*"

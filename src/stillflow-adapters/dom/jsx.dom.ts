@@ -19,8 +19,8 @@ const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
 const COMMON_EVENT_PROPERTY_PREFIX = `on:`
 const COMMON_STYLES_PROPERTY = 'styles'
 
-type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']> }
-type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style'>
+type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']>, children: any }
+type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style' | 'children'>
 type ElementServicePropertiesWithoutPrefix<V> = {
   'vm': (context: V) => (node: AnyDOM<V>) => vm.Target<HTMLElement, V>,
   'if': (context: V) => boolean,
