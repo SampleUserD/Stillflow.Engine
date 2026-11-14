@@ -58,6 +58,10 @@ class JSXDOMUtilities {
     const static_content = new Array<string>()
     const children = new Array<Binding<any>>()
 
+    if (Array.isArray(all) == false) {
+      all = [all]
+    }
+
     for (const child of all) {
       if (typeof child === 'string' || typeof child === 'number') {
         static_content.push(child.toString())

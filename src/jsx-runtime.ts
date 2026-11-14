@@ -5,3 +5,7 @@ export function jsx<T>(type: (properties: Record<string, any>, children: Binding
 
   return type(properties, children)
 }
+
+export function jsxs<T>(type: (properties: Record<string, any>, children: Binding<any>[]) => Binding<T>, properties: Record<string, any>): Binding<T> {
+  return jsx(type, properties)
+}
