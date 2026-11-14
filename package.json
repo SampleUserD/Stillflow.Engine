@@ -62,7 +62,7 @@
   "homepage": "https://github.com/SampleUserD/Stillflow.Engine#readme",
   "scripts": {
     "build": "tsc --build && tsc-alias && tsc-esm-fix",
-    "watch": "concurrently \"tsc -w\" \"tsc-alias -w\"",
+    "watch": "npx concurrently \"tsc -w\" \"tsc-alias -w\"",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

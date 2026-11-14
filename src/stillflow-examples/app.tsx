@@ -1,5 +1,4 @@
 import { core, vm, operators, adapters, collection } from "../index.js"
-import { AnyDOM } from "../stillflow-adapters/dom/vm/dom.types.js"
 import { buildData } from "./data.js"
 
 const { Stillflow, State, Batcher } = core
@@ -226,18 +225,9 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
   )
 }
 
-function custom_compiler(node: AnyDOM<any>): vm.Target {
-  return {
-    root: document.createElement('canvas'),
-    applier(root, context) {
-      root.getContext('2d').fillRect(0, 0, 100, 100)
-    }
-  }
-}
-
 const controller = new BenchmarkApplicationController()
 
-const update = dom.$(<jsxdom.div sf:vm={() => custom_compiler}><BenchmarkApplicationView controller={controller} /></jsxdom.div>)
+const update = dom.$(<BenchmarkApplicationView controller={controller} />)
 
 controller.core.on(() => update({}))
 
