@@ -6,10 +6,12 @@ import { Properties } from "./properties/properties.js"
 import { describe } from "./description/describe.js"
 import { Binding } from "../../stillflow-vm/binding.js"
 import { apply } from "./vm/compile/dom.apply.js"
+import { apply_keyed } from './vm/compile/dom.apply.keyed.js'
 
 type PropertiesWithoutServices<V, K extends keyof HTMLElementTagNameMap> = Omit<Properties<V, K>, 'name'>
 
 type Options = {
+  mode?: 'keyed' | 'non-keyed'
   container: HTMLElement
 }
 
@@ -21,13 +23,24 @@ export type DOMRegistry = {
 }
 
 const DEFAULT_OPTIONS: Options = {
+  mode: undefined,
   container: document.body
 }
 
 export const DOM_REGISTRY = Object.create(null) as DOMRegistry
 
 DOM_REGISTRY.$ = function $<V>(root: AnyDOM<V>, options: Options = DEFAULT_OPTIONS) {
-  const runner = apply(root)
+  let runner: vm.Target<HTMLElement, V>
+
+  switch (options.mode) {
+    case 'keyed':
+      runner = apply_keyed(root)
+      break
+    case 'non-keyed':
+    default:
+      runner = apply(root)
+  }
+
   const update = (context: V) => runner.applier(runner.root, context)
 
   options.container.appendChild(runner.root)

@@ -13,6 +13,5 @@ export const apply: vm.Compiler<Properties<any, any>, HTMLElement> = <V>(node: A
   return {
     root: compilation.root,
     applier: (root: HTMLElement, context: V) => applier(root, context),
-    dispose: (root: HTMLElement) => root.remove()
   }
 }

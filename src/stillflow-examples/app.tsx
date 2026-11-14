@@ -227,7 +227,10 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
 
 const controller = new BenchmarkApplicationController()
 
-const update = dom.$(<BenchmarkApplicationView controller={controller} />)
+const update = dom.$(<BenchmarkApplicationView controller={controller} />, {
+  mode: 'keyed',
+  container: document.body
+})
 
 controller.core.on(() => update({}))
 
