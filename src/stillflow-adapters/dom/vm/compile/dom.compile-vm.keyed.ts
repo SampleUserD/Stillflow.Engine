@@ -126,8 +126,6 @@ const generators: vm.Config<Context>['generators'] = {
     code += `const items = ${selectIndex}(context);`
     code += `const target = sf_node_cache[${container}];`
     code += `const { clears, addes, swaps, removes, updates } = items.flush();`
-    code += `}`
-    code += `else {`
     code += `if (clears) {`
     code += `const freelist = ${elementsIndex}.splice(0);`
     code += `for (const element of freelist) {`
@@ -163,7 +161,6 @@ const generators: vm.Config<Context>['generators'] = {
     code += `}`
     code += `for (const id of updates) {`
     code += `${applierIndex}(${elementsIndex}[id], items.at(id));`
-    code += `}`
     code += `}`
     code += `}`
 
