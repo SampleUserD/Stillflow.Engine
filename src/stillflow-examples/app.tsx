@@ -129,12 +129,9 @@ class BenchmarkApplicationController {
 
   public swap() {
     const size = this._view.items.size
-    const mutator = (id: number) => (view: BenchmarkItem) => view.index = id
 
     if (size > 998) {
       this._view.items.swap(1, 998)
-      this._view.items.mutate(1, mutator(1))
-      this._view.items.mutate(998, mutator(998))
       this._stillflow.commit()
     }
   }

@@ -149,10 +149,11 @@ const generators: vm.Config<Context>['generators'] = {
     code += `target.appendChild(fragment);`
     code += `}`
     code += `for (const [i, j] of swaps.entries()) {`
-    code += `const x = ${elementsIndex}[i];`
-    code += `const y = ${elementsIndex}[j];`
-    code += `target.insertBefore(x, ${elementsIndex}[j + 1]);`
-    code += `target.insertBefore(y, ${elementsIndex}[i + 1]);`
+    code += `target.insertBefore(${elementsIndex}[i], ${elementsIndex}[j + 1]);`
+    code += `target.insertBefore(${elementsIndex}[j], ${elementsIndex}[i + 1]);`
+    code += `const temporary = ${elementsIndex}[i];`
+    code += `${elementsIndex}[i] = ${elementsIndex}[j];`
+    code += `${elementsIndex}[j] = temporary;`
     code += `}`
     code += `for (const id of removes) {`
     code += `const element = ${elementsIndex}[id];`
