@@ -30,11 +30,11 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 
 *Note 2*: The results of jsx version of **Stillflow** is done without micro- or macro- tasks.
 
-![Benchmark scores of Stillflow](images/1.png)
+![Benchmark scores of Stillflow](images/4.png)
 
 **Stillflow** memory usage score is below
 
-![Memory usage of Stillflow](images/m1.png)
+![Memory usage of Stillflow](images/m2.png)
 
  ## Quick Start
 
