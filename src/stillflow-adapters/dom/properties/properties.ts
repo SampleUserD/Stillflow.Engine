@@ -1,4 +1,4 @@
-import { Directives } from "../vm/dom.directives.js"
+import { Directives } from "./directives"
 
 export type Properties<Context, Tag extends keyof HTMLElementTagNameMap> = Partial<{
   name: Tag,

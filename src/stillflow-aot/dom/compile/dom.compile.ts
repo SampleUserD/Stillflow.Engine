@@ -1,10 +1,12 @@
-import * as vm from "@vm/index"
-import { Codes } from "../dom.codes"
-import { AnyDOM } from "../dom.types"
-import { Template } from "../dom.template"
-import { transform } from "../transform/dom.transform"
+import * as vm from '@vm/index'
 
-export function compile<Context>(node: AnyDOM<Context>): Template {
+import { types } from '@babel/core'
+import { Codes } from '@/stillflow-aot/dom/dom.codes'
+import { AnyDOM } from '@/stillflow-aot/dom/dom.types'
+import { Template } from '@/stillflow-aot/dom/dom.template'
+import { transform } from '@/stillflow-aot/dom/transform/dom.transform'
+
+export function compile<V>(node: AnyDOM<V>, map: (each: types.Node) => AnyDOM<any>): Template {
   const emitter = new vm.Emitter()
   const strings = new vm.Payload()
   const functions = new vm.Payload()
@@ -43,21 +45,23 @@ export function compile<Context>(node: AnyDOM<Context>): Template {
     if (has_events) {
       const events = modifiers!.events as any
 
-      for (const name in events) {
-        const eventIndex = strings.add(name)
-        const functionIndex = functions.add(events[name])
+      for (const key in events) {
+        const propertyIndex = strings.add(key)
+        const functionIndex = functions.add(events[key])
 
-        emitter.emit(Codes.EVENT, current_id, eventIndex, functionIndex)
+        emitter.emit(Codes.EVENT, current_id, propertyIndex, functionIndex)
       }
     }
 
     if (has_text) {
       const functionIndex = functions.add(modifiers!.text)
+
       emitter.emit(Codes.TEXT, current_id, functionIndex)
     }
 
     if (has_if) {
       const functionIndex = functions.add(modifiers!.conditional)
+
       emitter.emit(Codes.IF, current_id, functionIndex)
     }
 
@@ -78,8 +82,7 @@ export function compile<Context>(node: AnyDOM<Context>): Template {
       const iterate = modifiers!.iterate!
 
       const selectIndex = functions.add(iterate.select)
-      const subTemplate = compile(iterate.each())
-      const templateIndex = templates.add(subTemplate)
+      const templateIndex = templates.add(compile(map(iterate.each), map))
 
       emitter.emit(Codes.FOR, current_id, selectIndex, templateIndex)
 

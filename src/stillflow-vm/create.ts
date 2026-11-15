@@ -19,6 +19,10 @@ export function vm_create<Input, Context extends { payload: Payload }>(config: V
 
     code += config.epilogue(context)
 
-    return new Function(...payload.parameters, code)(...payload.values)
+    return {
+      code,
+      parameters: payload.parameters,
+      values: payload.values
+    }
   }
 }

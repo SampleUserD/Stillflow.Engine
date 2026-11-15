@@ -1,7 +1,7 @@
 import * as vm from '../../stillflow-vm/index.js'
 
 import { Binding } from "../../stillflow-vm/binding.js"
-import { AnyDOM } from "./vm/dom.types.js"
+import { AnyDOM } from "./dom.types.js"
 import { Properties } from "./properties/properties.js"
 import { HTML_TAGS } from "./tags.js"
 import { describe } from "./description/describe.js"
@@ -127,18 +127,6 @@ for (const tag of HTML_TAGS) {
     const properties = JSXDOMUtilities.map_properties<T, typeof tag>(context)
 
     properties.text = static_content.join(String())
-
-    if (dynamic_content.length > 0) {
-      properties.modifiers.text = (context: T) => {
-        let contents = String()
-
-        for (const site of dynamic_content) {
-          contents += site(context)
-        }
-
-        return contents
-      }
-    }
 
     properties.name = tag
 

@@ -1,4 +1,4 @@
-import { SF_CONTEXT, SF_HANDLERS } from "../dom.symbols.js"
+import { SF_CONTEXT, SF_HANDLERS } from "@/stillflow-aot/dom/dom.symbols"
 
 export class EventDelegator {
   private _actives = new Set<string>()

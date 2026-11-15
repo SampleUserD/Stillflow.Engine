@@ -60,9 +60,9 @@ function App() {
   )
 }
 
-const update = dom.$(<App />, { container: document.body })
+// const update = dom.$(<App />, { container: document.body })
 
-stillflow.on(() => update(instance))
+// stillflow.on(() => update(instance))
 
-instance.input = String()
-stillflow.commit()
+// instance.input = String()
+// stillflow.commit()

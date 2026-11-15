@@ -1,5 +1,5 @@
-import { Binding } from "../../../stillflow-vm/binding.js"
-import { Properties } from "../properties/properties.js"
+import { Binding } from "@vm/binding"
+import { Properties } from "./dom.properties"
 
 export type DOM<V, K extends keyof HTMLElementTagNameMap> = Binding<Properties<V, K>>
 
