@@ -3,16 +3,16 @@ import path from "path"
 import { Environment } from "@/stillflow-vite/dom/environment"
 import { build_dom_from } from "@/stillflow-vite/dom/build-vm/build.dom"
 import { collect_component_in, collect_components_in, collect_imports_in, collect_template_map, collect_transform_map } from "@/stillflow-vite/dom/helpers/collectors"
-import { NodePath, PluginObject, generate, types } from "@babel/core"
+import { NodePath, PluginObject, types } from "@babel/core"
 import { parse } from "@babel/parser"
 import { existsSync, readFileSync, statSync } from "fs"
 import { create_compiler } from "@/stillflow-vite/dom/build-vm/compile"
 import { get_return_argument } from "@/stillflow-vite/dom/helpers/getters"
 import { build_module_from } from "@/stillflow-vite/dom/build-vm/build"
-import * as node_module from "module"
+import { createRequire } from "module"
 
 export default function StillflowDOMFabric() {
-  const require = node_module.createRequire(import.meta.url)
+  const require = createRequire(import.meta.url)
 
   function resolve_import(source: string, filename: string): string | Error {
     try {

@@ -5,7 +5,7 @@ import type { Statement, Expression } from '@babel/types'
 
 import { Codes } from '@/stillflow-vite/dom/directives/codes'
 import { Context } from '@/stillflow-vite/dom/build-vm/run'
-import { SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from '@/stillflow-vite/dom/utilities/symbols'
+import { SF_CONTEXT, SF_HANDLERS, SF_LISTENED } from '@/stillflow-runtime/utilities/symbols'
 import { Template } from '@/stillflow-vite/dom/build-vm/template'
 
 // Вспомогательные функции для чистоты кода

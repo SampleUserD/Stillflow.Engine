@@ -1,6 +1,6 @@
 import { BuildTimeDOMElement } from "@/stillflow-vite/dom/build-vm/build.dom"
 import { AnyDOM } from "@/stillflow-vite/dom/properties/types"
-import { SF_CACHE, SF_CACHE_TEXT } from "@/stillflow-vite/dom/utilities/symbols"
+import { SF_CACHE, SF_CACHE_TEXT } from "@/stillflow-runtime/utilities/symbols"
 import { types } from "@babel/core"
 
 export interface MarkupResult {

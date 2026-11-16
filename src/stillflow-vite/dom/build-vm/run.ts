@@ -4,8 +4,8 @@ import { types } from '@babel/core'
 import { markup } from '@/stillflow-vite/dom/build-vm/markup'
 import { generators } from '@/stillflow-vite/dom/directives/generators'
 import { Template } from '@/stillflow-vite/dom/build-vm/template'
-import { SF_CACHE, SF_CACHE_TEXT } from '@/stillflow-vite/dom/utilities/symbols'
-import { DELEGATOR } from '@/stillflow-vite/dom/utilities/delegator'
+import { SF_CACHE, SF_CACHE_TEXT } from '@/stillflow-runtime/utilities/symbols'
+import { DELEGATOR } from '@/stillflow-runtime/utilities/delegator'
 
 export type Context = Template & { payload: vm.Payload, delegator: typeof DELEGATOR }
 
