@@ -15,7 +15,7 @@ const DYNAMIC_PROPERTY_CYCLES = [`${DYNAMIC_PROPERTY_PREFIX}for`, `${DYNAMIC_PRO
 const DYNAMIC_PROPERTY_CONDITIONAL = `${DYNAMIC_PROPERTY_PREFIX}if`
 const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
 const COMMON_EVENT_PROPERTY_PREFIX = `on:`
-const COMMON_STYLES_PROPERTY = 'styles'
+const COMMON_STYLES_PROPERTY = 'style:'
 
 function patch(record: Record<string, any>, key: string, value: any) {
   record[key] = value
@@ -56,6 +56,8 @@ export function build_dom_from(node: types.JSXElement, state: Environment): Buil
   const dom: BuildTimeDOMElement[] = []
 
   for (const key in properties) {
+    const value = properties[key]
+
     if (key.startsWith(COMMON_EVENT_PROPERTY_PREFIX)) {
       common_properties.events = common_properties.events || {}
       patch(common_properties.events, key.slice(COMMON_EVENT_PROPERTY_PREFIX.length), properties[key])
@@ -74,10 +76,14 @@ export function build_dom_from(node: types.JSXElement, state: Environment): Buil
     } else if (key.startsWith(DYNAMIC_PROPERTY_PREFIX)) {
       directives.properties = directives.properties || {}
       patch(directives.properties, key.slice(DYNAMIC_PROPERTY_PREFIX.length), properties[key])
-    } else if (key === COMMON_STYLES_PROPERTY) {
-      common_properties.styles = properties[key]
-    } else {
-      patch(common_properties, key, properties[key])
+    } else if (types.isStringLiteral(value)) {
+      if (key.startsWith(COMMON_STYLES_PROPERTY)) {
+        common_properties.styles = common_properties.styles || {}
+        patch(common_properties.styles, key.slice(COMMON_STYLES_PROPERTY.length), value.value)
+      } else {
+        common_properties.properties = common_properties.properties || {}
+        patch(common_properties.properties, key, value.value)
+      }
     }
   }
 

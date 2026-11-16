@@ -3,8 +3,11 @@ import * as collection from "@/stillflow-collection/index.js"
 const DYNAMIC_PROPERTY_PREFIX = `sf:` as const
 const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-` as const
 const COMMON_EVENT_PROPERTY_PREFIX = `on:` as const
+const COMMON_STYLES_PROPERTY = 'style:'
 
-type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']>, children: any }
+type ElementStyles<K extends keyof HTMLElementTagNameMap> = { children: any } & {
+  [L in keyof (HTMLElementTagNameMap[K]['style']) & string as `${typeof COMMON_STYLES_PROPERTY}${L}`]: (HTMLElementTagNameMap[K]['style'])[L]
+}
 type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<Omit<HTMLElementTagNameMap[K], keyof { [K in keyof HTMLElementEventMap as `on${K}`]: any }>, 'style' | 'children'>
 type ElementServicePropertiesWithoutPrefix<V> = {
   'if': (context: V) => boolean,
