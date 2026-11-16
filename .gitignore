@@ -6,5 +6,6 @@ css/
 *.css
 *.html
 *.txt
+*.tgz
 *.exe
 *.tsbuildinfo

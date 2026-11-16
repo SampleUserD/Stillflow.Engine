@@ -8,10 +8,10 @@ import { get_return_argument } from "@/stillflow-vite/dom/helpers/getters"
 import { build_module_from } from "@/stillflow-vite/dom/build-vm/build"
 
 export default function StillflowDOMFabric({ node_module, path, babel, fs, parser }) {
-  const { existsSync, readFileSync, statSync } = fs
-  const { types } = babel
-  const { parse } = parser
-  const { createRequire } = node_module
+  const { existsSync, readFileSync, statSync } = fs.default
+  const { types } = babel.default
+  const { parse } = parser.default
+  const { createRequire } = node_module.default
 
   const require = createRequire(import.meta.url)
 
