@@ -14,9 +14,15 @@ export function stillflow_plugin(): Plugin {
         return
       }
 
+      const node_module = await import('node:module')
+      const parser = await import('@babel/parser')
+      const babel = await import('@babel/core')
+      const path = await import('node:path')
+      const fs = await import('node:fs')
+
       const result = await transformAsync(code, {
         filename: id,
-        plugins: [transformer()],
+        plugins: [transformer({ node_module, babel, parser, path, fs })],
         parserOpts: {
           plugins: ['jsx', 'typescript']
         },

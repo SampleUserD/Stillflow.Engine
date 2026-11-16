@@ -1,17 +1,17 @@
-import path from "path"
+import type { NodePath, PluginObject, types } from "@babel/core"
 
 import { Environment } from "@/stillflow-vite/dom/environment"
 import { build_dom_from } from "@/stillflow-vite/dom/build-vm/build.dom"
 import { collect_component_in, collect_components_in, collect_imports_in, collect_template_map, collect_transform_map } from "@/stillflow-vite/dom/helpers/collectors"
-import { NodePath, PluginObject, types } from "@babel/core"
-import { parse } from "@babel/parser"
-import { existsSync, readFileSync, statSync } from "fs"
 import { create_compiler } from "@/stillflow-vite/dom/build-vm/compile"
 import { get_return_argument } from "@/stillflow-vite/dom/helpers/getters"
 import { build_module_from } from "@/stillflow-vite/dom/build-vm/build"
 
-export default function StillflowDOMFabric() {
-  const createRequire = new Function('return require("node:module").createRequire')
+export default function StillflowDOMFabric({ node_module, path, babel, fs, parser }) {
+  const { existsSync, readFileSync, statSync } = fs
+  const { types } = babel
+  const { parse } = parser
+  const { createRequire } = node_module
 
   const require = createRequire(import.meta.url)
 
@@ -127,10 +127,10 @@ export default function StillflowDOMFabric() {
                 throw new Error('sf:each must be an arrow/function expression')
               }
 
-              const argument = get_return_argument(ast)
+              const argument = get_return_argument(ast as any)
 
               if (types.isJSXElement(argument)) {
-                return build_dom_from(argument, state)
+                return build_dom_from(argument as any, state)
               }
 
               throw new Error(`sf:each must return JSX-element`)
