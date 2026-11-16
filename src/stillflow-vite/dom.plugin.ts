@@ -27,7 +27,9 @@ export default function StillflowDOMFabric() {
               }
 
               try {
-                const resolved_path = path.resolve(path.dirname(filename), import_info.source)
+                const resolved_path = require.resolve(import_info.source, {
+                  paths: [path.dirname(filename)]
+                })
 
                 const source = readFileSync(resolved_path, 'utf-8')
 
