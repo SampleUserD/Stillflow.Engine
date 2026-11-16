@@ -14,11 +14,11 @@ export function stillflow_plugin(): Plugin {
         return
       }
 
-      const node_module = await import('node:module')
+      const node_module = await new Function("return import('node:module')")()
       const parser = await import('@babel/parser')
       const babel = await import('@babel/core')
-      const path = await import('node:path')
-      const fs = await import('node:fs')
+      const path = await new Function("return import('node:path')")()
+      const fs = await new Function("return import('node:fs')")()
 
       const result = await transformAsync(code, {
         filename: id,
