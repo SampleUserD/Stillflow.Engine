@@ -5,12 +5,42 @@ import { build_dom_from } from "@/stillflow-vite/dom/build-vm/build.dom"
 import { collect_component_in, collect_components_in, collect_imports_in, collect_template_map, collect_transform_map } from "@/stillflow-vite/dom/helpers/collectors"
 import { NodePath, PluginObject, generate, types } from "@babel/core"
 import { parse } from "@babel/parser"
-import { readFileSync } from "fs"
+import { existsSync, readFileSync, statSync } from "fs"
 import { create_compiler } from "@/stillflow-vite/dom/build-vm/compile"
 import { get_return_argument } from "@/stillflow-vite/dom/helpers/getters"
 import { build_module_from } from "@/stillflow-vite/dom/build-vm/build"
 
 export default function StillflowDOMFabric() {
+  function resolve_import(source: string, filename: string): string | Error {
+    try {
+      return require.resolve(source, { paths: [path.dirname(filename)] })
+    } catch (error) {
+
+      const base = path.resolve(path.dirname(filename), source)
+      const extensions = ['.ts', '.tsx', '.jsx', '.js']
+
+      for (const extension of extensions) {
+        const fullname = base + extension
+
+        if (existsSync(fullname)) {
+          return fullname
+        }
+      }
+
+      if (existsSync(base) && statSync(base).isDirectory()) {
+        for (const extension of extensions) {
+          const fullname = path.join(base, `index${extension}`)
+
+          if (existsSync(fullname)) {
+            return fullname
+          }
+        }
+      }
+
+      return error
+    }
+  }
+
   return function StillflowDOM(): PluginObject<any> {
     return {
       name: "stillflow-aot",
@@ -26,30 +56,29 @@ export default function StillflowDOMFabric() {
                 continue
               }
 
-              try {
-                const resolved_path = require.resolve(import_info.source, {
-                  paths: [path.dirname(filename)]
-                })
+              const resolved_import = resolve_import(import_info.source, filename)
 
-                const source = readFileSync(resolved_path, 'utf-8')
+              if (resolved_import instanceof Error) {
+                console.error(`[stillflow] Could not import file "${import_info.source}: "`, resolved_import)
+                continue
+              }
 
-                const ast = parse(source, {
-                  sourceType: 'module',
-                  plugins: ['jsx', 'typescript'],
-                })
+              const source = readFileSync(resolved_import, 'utf-8')
 
-                if (ast == null) {
-                  console.warn(`[stillflow] File is not found: ${resolved_path}`)
-                  return
-                }
+              const ast = parse(source, {
+                sourceType: 'module',
+                plugins: ['jsx', 'typescript'],
+              })
 
-                const component = collect_component_in(ast, import_info.imported_name, resolved_path)
+              if (ast == null) {
+                console.warn(`[stillflow] File is not found: ${resolved_import}`)
+                return
+              }
 
-                if (component) {
-                  components.set(local_name, component)
-                }
-              } catch (error) {
-                console.error(`[stillflow] Could not import file "${import_info.source}": `, error)
+              const component = collect_component_in(ast, import_info.imported_name, resolved_import)
+
+              if (component) {
+                components.set(local_name, component)
               }
             }
 
