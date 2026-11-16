@@ -11,12 +11,9 @@ export interface MarkupResult {
 function markup_template_code(node: BuildTimeDOMElement, path: number[], statements: types.Statement[]) {
   const { modifiers } = node.properties
 
-  const has_modifiers =
-    modifiers?.text !== undefined ||
-    modifiers?.properties !== undefined ||
-    modifiers?.events !== undefined ||
-    modifiers?.iterate !== undefined ||
-    modifiers?.conditional !== undefined
+  console.log(modifiers)
+
+  const has_modifiers = Object.keys(modifiers).length > 0
 
   if (has_modifiers) {
     let member: types.Expression = types.identifier('root')

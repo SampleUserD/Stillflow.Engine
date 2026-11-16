@@ -21,7 +21,7 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
   [Codes.IF](bytecode, offset, context) {
     const container = bytecode[offset + 2]
     const handler = context.functions[bytecode[offset + 3]]
-    const handlerIndex = context.payload.add(handler, vm.Payload.RESOLVE_NUMBERIC)
+    const handlerIndex = context.payload.add(handler, vm.Payload.RESOLVE_NODE)
 
     return [
       t.blockStatement([

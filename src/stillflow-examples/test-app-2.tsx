@@ -2,6 +2,6 @@ import { runtime } from "../index.ts"
 
 const { jsxdom } = runtime
 
-export function Item() {
-  return <jsxdom.div>Hello</jsxdom.div>
+export function Item(props: { controller: any }) {
+  return <jsxdom.div on: click={() => props.controller()}>Hello</jsxdom.div>
 }

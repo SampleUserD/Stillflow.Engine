@@ -137,8 +137,6 @@ export default function StillflowDOM(): PluginObject<any> {
               }
 
               call_path.replaceWith(iife)
-
-              console.log(generate(call_path.node).code)
             } catch (error) {
               console.error(`[stillflow] Failed to compile JSX in ${state.filename}: `, error)
             }

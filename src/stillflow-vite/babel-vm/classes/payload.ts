@@ -10,7 +10,7 @@ export type PayloadTag<V> = {
 
 export class Payload {
   public static RESOLVE_STRING: PayloadResolver<string> = value => types.stringLiteral(value)
-  public static RESOLVE_NUMBERIC: PayloadResolver<number> = value => types.numericLiteral(value)
+  public static RESOLVE_NUMERIC: PayloadResolver<number> = value => types.numericLiteral(value)
   public static RESOLVE_BOOLEAN: PayloadResolver<boolean> = value => types.booleanLiteral(value)
   public static RESOLVE_NODE: PayloadResolver<types.Node> = value => value
 
@@ -26,7 +26,7 @@ export class Payload {
     let payload_tag = this._indices.get(value)
 
     if (value === undefined) {
-      throw new Error()
+      throw new Error(`[stillflow] value is undefined in Payload.add()`)
     }
 
     if (payload_tag === undefined) {
@@ -44,18 +44,30 @@ export class Payload {
   }
 
   public tag<V>(value: V): PayloadTag<V> {
-    return this._indices.get(value)!
+    const tag = this._indices.get(value)
+
+    if (tag === undefined) {
+      throw new Error(`[stillflow] Empty tag for value: ${value}`)
+    }
+
+    return tag!
   }
 
   public get<V>(index: number): V {
-    return this._map.get(index)! as V
+    const value = this._map.get(index)! as V
+
+    if (value === undefined) {
+      throw new Error(`[stillflow] Nothing is found on index ${index}`)
+    }
+
+    return value
   }
 
   public resolve<V>(value: V): types.Node {
     const payload_tag = this._indices.get(value)
 
     if (payload_tag === undefined) {
-      throw new Error(`You should "add()" value first`)
+      throw new Error(`[stillflow] You should "add()" value first in Payload.resolve()`)
     }
 
     return payload_tag.resolver(value)
