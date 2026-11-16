@@ -3,11 +3,7 @@ import transformer from './stillflow-vite/dom.plugin'
 import type { Plugin } from "vite"
 import { transformAsync } from "@babel/core"
 
-export interface StillflowOptions {
-  use_internal_paths?: boolean
-}
-
-export function stillflow_plugin(options: StillflowOptions = {}): Plugin {
+export function stillflow_plugin(): Plugin {
   return {
     name: 'vite-plugin-stillflow',
     enforce: 'pre',

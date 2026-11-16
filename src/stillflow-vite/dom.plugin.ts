@@ -9,9 +9,10 @@ import { existsSync, readFileSync, statSync } from "fs"
 import { create_compiler } from "@/stillflow-vite/dom/build-vm/compile"
 import { get_return_argument } from "@/stillflow-vite/dom/helpers/getters"
 import { build_module_from } from "@/stillflow-vite/dom/build-vm/build"
-import { createRequire } from "module"
 
 export default function StillflowDOMFabric() {
+  const createRequire = new Function('return require("node:module").createRequire')
+
   const require = createRequire(import.meta.url)
 
   function resolve_import(source: string, filename: string): string | Error {
