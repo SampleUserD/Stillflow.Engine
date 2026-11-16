@@ -63,9 +63,8 @@
   },
   "homepage": "https://github.com/SampleUserD/Stillflow.Engine#readme",
   "scripts": {
-    "build": "npm run build:lib",
-    "build:lib": "vite build --mode lib",
-    "build:app": "vite build",
+    "dev": "vite",
+    "build": "vite build",
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {

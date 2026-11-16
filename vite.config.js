@@ -4,7 +4,7 @@ import { stillflow_plugin } from './dist/vite.es'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig(({ mode }) => {
-  if (mode === 'lib') {
+  if (mode === 'production') {
     return {
       plugins: [
         dts({

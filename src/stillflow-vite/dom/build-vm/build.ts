@@ -17,7 +17,7 @@ function build_imports(): types.Statement[] {
           types.identifier('DELEGATOR')
         )
       ],
-      types.stringLiteral('@/stillflow-vite/dom/utilities/delegator')
+      types.stringLiteral('stillflow.engine')
     ),
     types.importDeclaration(
       [
@@ -46,7 +46,7 @@ function build_imports(): types.Statement[] {
           types.identifier('SF_ANY')
         )
       ],
-      types.stringLiteral('@/stillflow-vite/dom/utilities/symbols')
+      types.stringLiteral('stillflow.engine')
     )
   ]
 }
