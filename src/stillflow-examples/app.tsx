@@ -1,8 +1,8 @@
-import { core, operators, runtime, collection } from "../index.js"
-import { buildData } from "./data.js"
+import { core, operators, runtime, collections } from "../index.ts"
+import { buildData } from "./data.ts"
 
 const { Stillflow, State, Batcher } = core
-const { jsxdom } = runtime
+const { jsxdom, $ } = runtime
 
 type BenchmarkItem = {
   id: number,
@@ -22,7 +22,7 @@ type FullBenchmarkView = {
     previous_id: BenchmarkMapping['previous_id']
   },
   data: BenchmarkMapping['data'],
-  items: collection.Flushable<BenchmarkItem>
+  items: collections.Flushable<BenchmarkItem>
 }
 
 class BenchmarkApplicationController {
@@ -60,16 +60,16 @@ class BenchmarkApplicationController {
         current_id: current_id.backref()
       }),
       data: data.backref(),
-      items: operators.is(collection.Flushable.name)
+      items: operators.is(collections.Flushable.name)
     }
   }
 
   public constructor() {
-    const col = new collection.Flushable(new collection.Fenwick(10000))
+    const col = new collections.Flushable(new collections.Fenwick(10000))
 
     const view = this._stillflow.compile(this.source)
 
-    this._factory.add(collection.Flushable.name, view => col)
+    this._factory.add(collections.Flushable.name, view => col)
 
     this._view = this._stillflow.instantiate(view, this._factory)
   }
@@ -224,11 +224,10 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
 
 const controller = new BenchmarkApplicationController()
 
-// const update = dom.$(<BenchmarkApplicationView controller={controller} />, {
-//   mode: 'keyed',
-//   container: document.body
-// })
+const Fabric = $(<BenchmarkApplicationView controller={controller}/>)
 
-// controller.core.on(() => update({}))
+const { app, root } = Fabric()
 
-// update({})
+document.body.appendChild(root)
+
+controller.core.on(() => app(root, {}))

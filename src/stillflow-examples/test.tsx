@@ -1,4 +1,4 @@
-import { core, collection, operators, runtime } from '../index.js'
+import { core, collections, operators, runtime } from '../index.ts'
 
 type AppState = {
   input: string
@@ -10,20 +10,20 @@ type TodoItem = {
 
 type TodoState = {
   input: string,
-  items: collection.Flushable<TodoItem>
+  items: collections.Flushable<TodoItem>
 }
 
-const { jsxdom } = runtime
+const { jsxdom, $ } = runtime
 
 const state = new core.State()
 const stillflow = new core.Stillflow<AppState>(state)
 const factory = stillflow.factory()
 
-factory.add(collection.Flushable.name, () => new collection.Flushable(new collection.Fenwick(100)))
+factory.add(collections.Flushable.name, () => new collections.Flushable(new collections.Fenwick(100)))
 
 const source = {
   input: stillflow.variable('input').backref(),
-  items: operators.is(collection.Flushable.name)
+  items: operators.is(collections.Flushable.name)
 }
 
 const view = stillflow.compile(source)
@@ -60,9 +60,13 @@ function App() {
   )
 }
 
-// const update = dom.$(<App />, { container: document.body })
+const Fabric = $(<App />)
 
-// stillflow.on(() => update(instance))
+const { app: update, root } = Fabric()
 
-// instance.input = String()
-// stillflow.commit()
+stillflow.on(() => update(root, instance))
+
+document.body.appendChild(root)
+
+instance.input = String()
+stillflow.commit()

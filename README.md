@@ -21,20 +21,6 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
  3. **Pluggable Collections** --- Built-in Fenwick-based collections for fast clear/remove and Flushable with `flush()` collection for fast `delta` calculations.
  4. **Headless core** --- The core is completely independent of `DOM`
  5. **Type-safe JSX** --- Full autocomplete for `DOM` properties and directives (`sf:`)
- 
-## Benchmarks
-
-**Stillflow** performs within *3-4% of VanillaJS* in the Krause benchmark on my notepad, while providing a full transactional state model. I run benchmark on JSX and DOM versions of my framework. You can see results below. I explicitly removed benchmark-specific optimizations from the data generation to ensure a completely fair comparison.
-
-*Note 1*: In specific operations like `remove row`, **Stillflow** is up to 1.8-2x than *VanillaJS* due to its delta-based collection and lazy deletion.
-
-*Note 2*: The results of jsx version of **Stillflow** is done without micro- or macro- tasks.
-
-![Benchmark scores of Stillflow](images/4.png)
-
-**Stillflow** memory usage score is below
-
-![Memory usage of Stillflow](images/m2.png)
 
  ## Quick Start
 
@@ -42,18 +28,10 @@ Also I think that **explicit reactivity is better than implicit reactivity**. So
 
 For a starter you can play with [it in **CodeSandBox**](https://codesandbox.io/p/sandbox/stillflow-engine-starter-3qv9mh). Simple demonstration of the features of **Stillflow**.
 
-You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandbox/43vn9g). It shows following results:
-
-| Operation | Dataset Size | Execution Time (State + DOM) |
-| :--- | :--- | :--- |
-| **Append rows** | 10,000 rows | **~57ms** |
-| **Full list swap (sort)** | 10,000 rows | **~40ms max** |
-| **Partial random swaps** | 1,000 pairs | **~6-8ms max** |
-| **Lazy remove every 2nd row** | 10,000 rows (5k removed) | **~24ms max** |
-| **Lazy remove every 2nd row** | 10,000 rows (60k removed) | **~242ms max** ($O(k \log n)$ scaling) |
+You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandbox/43vn9g).
 
 ```ts
-import { core, vm, collection, operators, adapters } from 'stillflow.engine'
+import { core, collections, operators, runtime } from 'stillflow.engine'
 
 type AppState = {
   input: string
@@ -65,20 +43,20 @@ type TodoItem = {
 
 type TodoState = {
   input: string,
-  items: collection.Flushable<TodoItem>
+  items: collections.Flushable<TodoItem>
 }
 
-const { jsxdom, dom } = adapters
+const { jsxdom, $ } = runtime
 
 const state = new core.State()
 const stillflow = new core.Stillflow<AppState>(state)
 const factory = stillflow.factory()
 
-factory.add(collection.Flushable.name, () => new collection.Flushable(new collection.Fenwick(100)))
+factory.add(collections.Flushable.name, () => new collections.Flushable(new collections.Fenwick(100)))
 
 const source = {
   input: stillflow.variable('input').backref(),
-  items: operators.is(collection.Flushable.name)
+  items: operators.is(collections.Flushable.name)
 }
 
 const view = stillflow.compile(source)
@@ -115,9 +93,13 @@ function App() {
   )
 }
 
-const update = dom.$(<App />, { container: document.body })
+const Fabric = $(<App />)
 
-stillflow.on(() => update(instance))
+const { app: update, root } = Fabric()
+
+stillflow.on(() => update(root, instance))
+
+document.body.appendChild(root)
 
 instance.input = String()
 stillflow.commit()
