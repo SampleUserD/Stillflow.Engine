@@ -69,17 +69,23 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "@babel/core": "^8.1.2",
-    "@types/babel__core": "^7.20.5",
     "@types/node": "^26.6.6",
     "typescript": "^5.0.0",
     "vite-plugin-dts": "^5.1.2"
   },
   "peerDependencies": {
-    "vite": "^8.3.8"
+    "vite": "^8.3.8",
+    "@babel/core": "^8.1.2",
+    "@types/babel__core": "^7.20.5"
   },
   "peerDependenciesMeta": {
     "vite": {
+      "optional": true
+    },
+    "@babel/core": {
+      "optional": true
+    },
+    "@types/babel__core": {
       "optional": true
     }
   }
