@@ -11,8 +11,6 @@ export interface MarkupResult {
 function markup_template_code(node: BuildTimeDOMElement, path: number[], statements: types.Statement[]) {
   const { modifiers } = node.properties
 
-  console.log(modifiers)
-
   const has_modifiers = Object.keys(modifiers).length > 0
 
   if (has_modifiers) {

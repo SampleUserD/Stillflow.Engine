@@ -55,9 +55,6 @@ export function build_dom_from(node: types.JSXElement, state: Environment): Buil
 
   const dom: BuildTimeDOMElement[] = []
 
-  let static_expression: types.Expression = types.stringLiteral(String())
-  let dynamic_expression: types.Expression = types.stringLiteral(String())
-
   for (const key in properties) {
     if (key.startsWith(COMMON_EVENT_PROPERTY_PREFIX)) {
       common_properties.events = common_properties.events || {}
@@ -85,22 +82,30 @@ export function build_dom_from(node: types.JSXElement, state: Environment): Buil
   }
 
   if (statics.length > 0) {
-    for (const text of statics) {
-      static_expression = types.binaryExpression('+', static_expression, text)
+    let static_expression: types.Expression = statics[0]
+
+    for (let index = 1; index < statics.length; index++) {
+      static_expression = types.binaryExpression('+', static_expression, statics[index])
     }
 
     common_properties.text = static_expression
   }
 
   if (dynamics.length > 0) {
-    for (const dynamic of dynamics) {
+    let dynamic_expression: types.Expression = types.callExpression(dynamics[0], [types.identifier('context')])
+
+    for (let index = 1; index < dynamics.length; index++) {
+      const dynamic = dynamics[index]
+
       dynamic_expression = types.binaryExpression('+', dynamic_expression, types.callExpression(dynamic, [types.identifier('context')]))
     }
 
     directives.text = types.functionExpression(
       null,
       [types.identifier('context')],
-      types.toBlock(dynamic_expression)
+      types.blockStatement([
+        types.returnStatement(dynamic_expression)
+      ])
     )
   }
 

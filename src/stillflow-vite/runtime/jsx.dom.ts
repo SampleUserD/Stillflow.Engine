@@ -1,33 +1,31 @@
-import { AnyDOM } from "./dom.types.js"
-
 import * as collection from "@/stillflow-collection/index.js"
 
-const DYNAMIC_PROPERTY_PREFIX = `sf:`
-const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-`
-const COMMON_EVENT_PROPERTY_PREFIX = `on:`
+const DYNAMIC_PROPERTY_PREFIX = `sf:` as const
+const DELEGATE_EVENT_PROPERTY_PREFIX = `${DYNAMIC_PROPERTY_PREFIX}on-` as const
+const COMMON_EVENT_PROPERTY_PREFIX = `on:` as const
 
 type ElementStyles<K extends keyof HTMLElementTagNameMap> = { styles: Partial<HTMLElementTagNameMap[K]['style']>, children: any }
-type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<HTMLElementTagNameMap[K], 'style' | 'children'>
+type ElementPropertiesWithoutStyles<K extends keyof HTMLElementTagNameMap> = Omit<Omit<HTMLElementTagNameMap[K], keyof { [K in keyof HTMLElementEventMap as `on${K}`]: any }>, 'style' | 'children'>
 type ElementServicePropertiesWithoutPrefix<V> = {
   'if': (context: V) => boolean,
   'for': (context: V) => collection.Flushable<unknown>,
-  'each': () => AnyDOM<V>,
+  'each': () => any,
 }
 type ElementServicePropertiesWithPrefix<V> = {
   [K in keyof ElementServicePropertiesWithoutPrefix<V> as `${typeof DYNAMIC_PROPERTY_PREFIX}${K}`]: ElementServicePropertiesWithoutPrefix<V>[K]
 }
 type ElementDynamicPropertiesWithPrefix<V, K extends keyof HTMLElementTagNameMap> = {
-  [L in (keyof HTMLElementTagNameMap[K]) & string as `${typeof DYNAMIC_PROPERTY_PREFIX}${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
+  [L in keyof (Omit<HTMLElementTagNameMap[K], keyof { [K in keyof HTMLElementEventMap as `on${K}`]: any }>) & string as `${typeof DYNAMIC_PROPERTY_PREFIX}${L}`]: (context: V) => HTMLElementTagNameMap[K][L]
 }
 type ElementDelegateEventsWithPrefix<V> = {
   [L in keyof HTMLElementEventMap as `${typeof DELEGATE_EVENT_PROPERTY_PREFIX}${L}`]: (event: HTMLElementEventMap[L], context: V) => void
 }
-type ElementEventMap<V> = {
+type ElementEventMapper<V> = {
   [K in keyof HTMLElementEventMap as `${typeof COMMON_EVENT_PROPERTY_PREFIX}${K}`]: (event: HTMLElementEventMap[K], context: V) => void
 }
 
 type JSXElementProperties<V, K extends keyof HTMLElementTagNameMap> =
-  ElementEventMap<V> &
+  ElementEventMapper<V> &
   ElementStyles<K> &
   ElementPropertiesWithoutStyles<K> &
   ElementDynamicPropertiesWithPrefix<V, K> &
@@ -35,10 +33,10 @@ type JSXElementProperties<V, K extends keyof HTMLElementTagNameMap> =
   ElementDelegateEventsWithPrefix<V>
 
 export type JSXDOMRegistry = {
-  [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXElementProperties<V, K>>) => AnyDOM<V>
+  [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXElementProperties<V, K>>) => any
 }
 
-export type EntryPoint<V> = (dom: AnyDOM<V>) => () => {
+export type EntryPoint<V> = (dom: any) => () => {
   app: (root: HTMLElement, context: V) => void,
   root: HTMLElement
 }

@@ -61,7 +61,7 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const selectIndex = context.payload.add(select, vm.Payload.RESOLVE_NODE)       // select функция (context) => Flushable
     const templateIndex = context.payload.add(template, value => t.identifier(`vm${context.environment.template_map.get(value)}`))   // vmN (applier)
     const rootIndex = context.payload.add(template.root, value => t.identifier(`root${context.environment.transform_map.get(value)}`))  // rootN (ленивый DOM)
-    const elementsIndex = context.payload.add([], value => t.arrayExpression(value))         // elementsN (мемоизированный массив)
+    const elementsIndex = context.payload.add([], () => t.identifier(`elements${context.environment.transform_map.get(template.root)}`))         // elementsN (мемоизированный массив)
 
     // Хелперы для генерации AST
     const elements = () => param(elementsIndex.index) // elementsN()

@@ -12,9 +12,11 @@ export function extract_children(node: types.JSXElement) {
     if (types.isJSXText(child)) {
       content.statics.push(types.stringLiteral(child.value.replace(/\s+/g, ' ').trim()))
     } else if (types.isJSXExpressionContainer(child)) {
-      content.statics.push(child.expression as types.Expression)
-    } else if (types.isArrowFunctionExpression(child)) {
-      content.dynamics.push(child)
+      if (types.isArrowFunctionExpression(child.expression)) {
+        content.dynamics.push(child.expression)
+      } else {
+        content.statics.push(child.expression as types.Expression)
+      }
     } else if (types.isJSXElement(child)) {
       children.push(child)
     }

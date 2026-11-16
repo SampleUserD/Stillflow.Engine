@@ -38,8 +38,10 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
+    base: '/output/',
     plugins: [stillflow_plugin()],
     build: {
+      minify: false,
       esbuild: {
         loader: 'tsx', // <-- Явно указываем загрузчик для TSX
         include: /src\/.*\.tsx?$/, // Применяем ко всем .ts и .tsx в src
