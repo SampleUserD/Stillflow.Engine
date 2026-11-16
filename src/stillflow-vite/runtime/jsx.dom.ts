@@ -38,7 +38,7 @@ export type JSXDOMRegistry = {
   [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXElementProperties<V, K>>) => AnyDOM<V>
 }
 
-export type EntryPoint<V> = (dom: AnyDOM<V>) => {
+export type EntryPoint<V> = (dom: AnyDOM<V>) => () => {
   app: (root: HTMLElement, context: V) => void,
   root: HTMLElement
 }
