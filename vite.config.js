@@ -1,11 +1,50 @@
 import { defineConfig } from 'vite'
-import { StillflowPlugin } from './dist/stillflow.plugin.js'
+import { resolve } from 'path'
+import { stillflow_plugin } from './dist/vite.es'
+import dts from 'vite-plugin-dts'
 
-export default defineConfig({
-  build: {
-    outDir: 'output',
-    emptyOutDir: true
-  },
-  base: './',
-  plugins: [StillflowPlugin()],
+export default defineConfig(({ mode }) => {
+  if (mode === 'lib') {
+    return {
+      plugins: [
+        dts({
+          tsconfigPath: './tsconfig.json'
+        })
+      ],
+      build: {
+        minify: false,
+        lib: {
+          // Точка входа твоей библиотеки
+          entry: {
+            index: resolve(__dirname, 'src/index.ts'),
+            vite: resolve(__dirname, 'src/vite.plugin.ts')
+          },
+
+          // Имя глобальной переменной (нужно только для UMD/IIFE)
+          name: 'Stillflow',
+
+          // Как называть выходные файлы
+          fileName: (format, entryName) => `${entryName}.${format}.js`,
+
+          // Форматы: 'es' для современных сборщиков, 'cjs' для Node.js
+          formats: ['es', 'cjs']
+        },
+        rollupOptions: {
+          // ВАЖНО: вынеси все зависимости, которые не должны попасть в бандл
+          external: ['vite', '@babel/core', 'fs', 'path'],
+        }
+      }
+    }
+  }
+
+  return {
+    plugins: [stillflow_plugin()],
+    build: {
+      esbuild: {
+        loader: 'tsx', // <-- Явно указываем загрузчик для TSX
+        include: /src\/.*\.tsx?$/, // Применяем ко всем .ts и .tsx в src
+      },
+      outDir: 'output'
+    }
+  }
 })

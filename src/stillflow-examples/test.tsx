@@ -1,4 +1,4 @@
-import { core, collection, operators, adapters } from '../index.js'
+import { core, collection, operators, runtime } from '../index.js'
 
 type AppState = {
   input: string
@@ -13,7 +13,7 @@ type TodoState = {
   items: collection.Flushable<TodoItem>
 }
 
-const { jsxdom, dom } = adapters
+const { jsxdom } = runtime
 
 const state = new core.State()
 const stillflow = new core.Stillflow<AppState>(state)

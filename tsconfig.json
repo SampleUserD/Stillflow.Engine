@@ -6,28 +6,16 @@
     "module": "es2022",
     "moduleResolution": "bundler",
     "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
     "declaration": true,
-    "declarationDir": "./dist",
-    "jsxImportSource": "../",
-    "jsx": "react-jsx",
+    "emitDeclarationOnly": true,
+    "jsx": "preserve",
     "types": [
       "node"
     ],
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@vm/*": [
-        "./src/stillflow-vm/*"
-      ],
-      "@collection/*": [
-        "./src/stillflow-collection/*"
-      ],
-      "@adapters/*": [
-        "./src/stillflow-adapters/*"
-      ],
-      "@core/*": [
-        "./src/stillflow/*"
       ]
     }
   }

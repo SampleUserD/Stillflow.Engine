@@ -1,8 +1,8 @@
-import { core, vm, operators, adapters, collection } from "../index.js"
+import { core, operators, runtime, collection } from "../index.js"
 import { buildData } from "./data.js"
 
 const { Stillflow, State, Batcher } = core
-const { jsxdom, dom } = adapters
+const { jsxdom } = runtime
 
 type BenchmarkItem = {
   id: number,
