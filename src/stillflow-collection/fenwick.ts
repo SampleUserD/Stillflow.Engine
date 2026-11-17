@@ -20,6 +20,10 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     return this._data[index + this._shift]
   }
 
+  public unmap(index: number): number {
+    return index - this._tree.count(index)
+  }
+
   public map(id: number): number {
     let physical_index = 0
     let step = 1
@@ -85,13 +89,6 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   public shrink(): void {
     this._data.splice(0, this._shift)
     this._shift = 0
-
-    const removes = Array.from(this._removes).sort((i, j) => j - i)
-
-    for (const id of removes) {
-      this._tree.add(id, -FenwickCollection.REMOVE_COUNT)
-      this._data.splice(id, 1)
-    }
 
     this._removes.clear()
   }

@@ -56,11 +56,10 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
   // ==========================================
   [Codes.FOR](bytecode, offset, context) {
     const container = bytecode[offset + 2]
-    const select = context.functions.get(bytecode[offset + 3])
+    const select = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 3])
     const template = context.templates.get<Template>(bytecode[offset + 4])
 
     // pN индексы
-    const selectIndex = context.payload.add(select, vm.Payload.RESOLVE_NODE)       // select функция (context) => Flushable
     const templateIndex = context.payload.add(template, value => t.identifier(`vm${context.environment.template_map.get(value)}`))   // vmN (applier)
     const rootIndex = context.payload.add(template.root, value => t.identifier(`root${context.environment.transform_map.get(value)}`))  // rootN (ленивый DOM)
     const elementsIndex = context.payload.add([], () => t.identifier(`elements${context.environment.transform_map.get(template.root)}`))         // elementsN (мемоизированный массив)
@@ -72,15 +71,27 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const applier = () => param(templateIndex.index)
     const templateRoot = () => param(rootIndex.index) // rootN
 
+    const select_id = context.counters.creations++
+
     return {
-      outer: [],
+      outer: [
+        t.variableDeclaration(
+          'const',
+          [
+            t.variableDeclarator(
+              t.identifier(`select${select_id}`),
+              select
+            ),
+          ]
+        )
+      ],
       body: [
         t.blockStatement([
           // const items = p<select>(context);
           t.variableDeclaration('const', [
             t.variableDeclarator(
               t.identifier('items'),
-              callWithContext(param(selectIndex.index))
+              callWithContext(t.identifier(`select${select_id}`))
             )
           ]),
           // const target = sf_node_cache[container];
@@ -380,35 +391,6 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
             ])
           ),
 
-          // for (const id of removes) { ... }
-          t.forOfStatement(
-            t.variableDeclaration('const', [t.variableDeclarator(t.identifier('id'))]),
-            t.identifier('removes'),
-            t.blockStatement([
-              // const element = elementsN[id];
-              t.variableDeclaration('const', [
-                t.variableDeclarator(t.identifier('element'), t.memberExpression(elements(), t.identifier('id'), true))
-              ]),
-              // element.remove();
-              t.expressionStatement(
-                t.callExpression(t.memberExpression(t.identifier('element'), t.identifier('remove')), [])
-              ),
-
-              // elementsN.splice(id, 1)
-              t.expressionStatement(
-                t.callExpression(
-                  t.memberExpression(
-                    elements(),
-                    t.identifier('splice')
-                  ),
-                  [
-                    t.identifier('id'),
-                    t.numericLiteral(1)
-                  ]
-                )
-              )
-            ])
-          ),
           // for (const id of updates) { ... }
           t.forOfStatement(
             t.variableDeclaration('const', [t.variableDeclarator(t.identifier('id'))]),
@@ -422,7 +404,29 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                 ])
               )
             ])
-          )
+          ),
+          // for (const id of removes) { ... }
+          t.forOfStatement(
+            t.variableDeclaration('const', [t.variableDeclarator(t.identifier('id'))]),
+            t.identifier('removes'),
+            t.blockStatement([
+              // const element = elementsN[id];
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  t.identifier('element'),
+                  t.memberExpression(
+                    elements(),
+                    t.identifier('id'),
+                    true
+                  )
+                )
+              ]),
+              // element.remove();
+              t.expressionStatement(
+                t.callExpression(t.memberExpression(t.identifier('element'), t.identifier('remove')), [])
+              ),
+            ])
+          ),
         ])
       ]
     }

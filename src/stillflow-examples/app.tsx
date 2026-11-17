@@ -92,17 +92,22 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
-    this._view.items.mark_removed(id)
+    this._view.items.mark_removed(this._view.items.map(id))
     this._stillflow.commit()
   }
 
   public select(id: number) {
     const NO_OP = () => { }
 
+    id = this._view.items.map(id)
+
     this._view.selection.previous_id = this._view.selection.current_id
     this._view.selection.current_id = id
 
-    this._view.items.mutate(this._view.selection.previous_id || 0, NO_OP)
+    if (this._view.selection.previous_id !== undefined) {
+      this._view.items.mutate(this._view.selection.previous_id, NO_OP)
+    }
+    
     this._view.items.mutate(id, NO_OP)
 
     this._stillflow.commit()

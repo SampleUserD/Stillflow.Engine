@@ -1,0 +1,1 @@
+export { Fenwick } from './fenwick-tree.js'

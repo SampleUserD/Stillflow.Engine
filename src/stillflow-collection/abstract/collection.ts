@@ -1,6 +1,8 @@
 export interface AbstractCollection<T> {
   at(index: number): T
 
+  unmap(index: number): number
+
   map(id: number): number
 
   add(value: T): void

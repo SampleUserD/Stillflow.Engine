@@ -22,6 +22,10 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
 
   public constructor(private _base: AbstractCollection<T>) { }
 
+  public unmap(index: number): number {
+    return this._base.unmap(index)
+  }
+
   public at(index: number): T {
     return this._base.at(index)
   }

@@ -13,6 +13,7 @@ export type Context = Template & {
   counters: {
     registrations: number,
     properties: number,
+    creations: number,
     texts: number
   }
 }
@@ -38,6 +39,7 @@ const create_context = (payload: vm.Payload, input: Template) => {
     counters: {
       registrations: 0,
       properties: 0,
+      creations: 0,
       texts: 0
     }
   }

@@ -19,27 +19,10 @@ function build_imports(): types.Statement[] {
         types.importSpecifier(
           types.identifier('DELEGATOR'),
           types.identifier('DELEGATOR')
-        )
+        ),
       ],
       types.stringLiteral('stillflow.engine')
     ),
-    types.importDeclaration(
-      [
-        types.importSpecifier(
-          types.identifier('SF_CACHE'),
-          types.identifier('SF_CACHE')
-        ),
-        types.importSpecifier(
-          types.identifier('SF_CACHE_TEXT'),
-          types.identifier('SF_CACHE_TEXT')
-        ),
-        types.importSpecifier(
-          types.identifier('SF_ANY'),
-          types.identifier('SF_ANY')
-        ),
-      ],
-      types.stringLiteral('stillflow.engine')
-    )
   ]
 }
 
