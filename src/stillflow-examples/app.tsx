@@ -141,7 +141,7 @@ class BenchmarkApplicationController {
     const size = this._view.items.size
 
     if (size > 998) {
-      this._view.items.swap(this._view.items.map(1), this._view.items.map(998))
+      this._view.items.swap(1, 998)
       this._stillflow.commit()
     }
   }
