@@ -31,7 +31,10 @@ export class EventDelegator {
             previous = previous.previousElementSibling
           }
 
-          const context = this._collections[parseInt(listId)].at(index)
+          const collection = this._collections[parseInt(listId)]
+          const context = collection.at(collection.map(index))
+
+          console.log(collection.unmap(index), collection.map(index), context.id - 1)
 
           this._handlers[parseInt(handlerId)](event, context)
 
@@ -49,22 +52,10 @@ export class EventDelegator {
   }
 
   public register_collection(collection: AbstractCollection<any>): number {
-    const index = this._collections.indexOf(collection)
-
-    if (index === -1) {
-      return this._collections.push(collection) - 1
-    }
-
-    return index
+    return this._collections.push(collection) - 1
   }
 
   public register(type: string, handler: (event: Event, context: any) => void): number {
-    const index = this._handlers.indexOf(handler)
-
-    if (index !== -1) {
-      return index
-    }
-
     const id = this._handlers.push(handler) - 1
 
     if (!this._actives.has(type)) {

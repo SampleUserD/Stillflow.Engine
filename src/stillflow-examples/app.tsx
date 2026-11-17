@@ -1,5 +1,5 @@
-import { core, operators, runtime, collections } from "../index.ts"
-import { buildData } from "./data.ts"
+import { core, operators, runtime, collections } from "stillflow.engine"
+import { buildData } from "./data"
 
 const { Stillflow, State, Batcher } = core
 const { jsxdom, $ } = runtime
@@ -60,16 +60,16 @@ class BenchmarkApplicationController {
         current_id: current_id.backref()
       }),
       data: data.backref(),
-      items: operators.is(collections.Flushable.name)
+      items: operators.is('collection')
     }
   }
 
   public constructor() {
-    const col = new collections.Flushable(new collections.Fenwick(10000))
+    const col = new collections.Flushable(new collections.Fenwick(500))
 
     const view = this._stillflow.compile(this.source)
 
-    this._factory.add(collections.Flushable.name, view => col)
+    this._factory.add('collection', view => col)
 
     this._view = this._stillflow.instantiate(view, this._factory)
   }
@@ -79,7 +79,13 @@ class BenchmarkApplicationController {
   }
 
   public add(count: number = 1000) {
-    this._view.items.attach(buildData(count))
+    const data = buildData(count)
+
+    for (let index = 0; index < count; index++) {
+      data[index].index = index
+    }
+
+    this._view.items.attach(data)
     this._stillflow.commit()
   }
 
@@ -92,6 +98,10 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
+    if (this.is_selected(id)) {
+      this._view.selection.current_id = undefined
+    }
+
     this._view.items.mark_removed(id)
     this._stillflow.commit()
   }
@@ -99,15 +109,13 @@ class BenchmarkApplicationController {
   public select(id: number) {
     const NO_OP = () => { }
 
-    id = this._view.items.map(id)
-
     this._view.selection.previous_id = this._view.selection.current_id
     this._view.selection.current_id = id
 
     if (this._view.selection.previous_id !== undefined) {
       this._view.items.mutate(this._view.selection.previous_id, NO_OP)
     }
-    
+
     this._view.items.mutate(id, NO_OP)
 
     this._stillflow.commit()
@@ -133,7 +141,7 @@ class BenchmarkApplicationController {
     const size = this._view.items.size
 
     if (size > 998) {
-      this._view.items.swap(1, 998)
+      this._view.items.swap(this._view.items.map(1), this._view.items.map(998))
       this._stillflow.commit()
     }
   }

@@ -1,5 +1,5 @@
 import { AbstractCollection } from "./abstract/collection.js"
-import { Delta, clear_delta, copy_delta } from "./delta.js"
+import { Delta, clear_delta } from "./delta.js"
 
 export class FlushableCollection<T> implements AbstractCollection<T> {
   private _front: Delta = {

@@ -15,14 +15,3 @@ export function clear_delta(delta: Delta): void {
   delta.replaces = false
   delta.clears = false
 }
-
-export function copy_delta(delta: Delta): Delta {
-  return {
-    addes: delta.addes,
-    swaps: new Map(delta.swaps),
-    updates: new Set(delta.updates),
-    removes: new Set(delta.removes),
-    replaces: delta.replaces,
-    clears: delta.clears
-  }
-}

@@ -19,11 +19,22 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
   // ==========================================
   [Codes.IF](bytecode, offset, context) {
     const container = bytecode[offset + 2]
-    const handler = context.functions[bytecode[offset + 3]]
-    const handlerIndex = context.payload.add(handler, vm.Payload.RESOLVE_NODE)
+    const handler = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 3])
+
+    const id = context.counters.creations++
 
     return {
-      outer: [],
+      outer: [
+        t.variableDeclaration(
+          'const',
+          [
+            t.variableDeclarator(
+              t.identifier(`hif${id}`),
+              handler
+            ),
+          ]
+        )
+      ],
       body: [
         t.blockStatement([
           t.variableDeclaration('const', [
@@ -32,13 +43,19 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
           t.variableDeclaration('const', [
             t.variableDeclarator(
               t.identifier('condition'),
-              callWithContext(param(handlerIndex.index))
+              callWithContext(t.identifier(`hif${id}`))
             )
           ]),
           t.expressionStatement(
             t.assignmentExpression(
               '=',
-              t.memberExpression(t.identifier('element'), t.identifier('style.display')),
+              t.memberExpression(
+                t.memberExpression(
+                  t.identifier('element'),
+                  t.identifier('style')
+                ),
+                t.identifier('display')
+              ),
               t.conditionalExpression(
                 t.identifier('condition'),
                 t.stringLiteral(''),
@@ -70,6 +87,36 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const target = () => nodeCache(container)
     const applier = () => param(templateIndex.index)
     const templateRoot = () => param(rootIndex.index) // rootN
+    const at = (index: t.Expression) => {
+      return t.callExpression(
+        t.memberExpression(
+          t.identifier('items'),
+          t.identifier('at')
+        ),
+        [
+          t.callExpression(
+            t.memberExpression(
+              t.identifier('items'),
+              t.identifier('unmap')
+            ),
+            [index]
+          )
+        ]
+      )
+    }
+    const element_at = (index: t.Expression) => {
+      return t.memberExpression(
+        elements(),
+        t.callExpression(
+          t.memberExpression(
+            t.identifier('items'),
+            t.identifier('unmap')
+          ),
+          [index]
+        ),
+        true
+      )
+    }
 
     const select_id = context.counters.creations++
 
@@ -81,6 +128,15 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
             t.variableDeclarator(
               t.identifier(`select${select_id}`),
               select
+            ),
+          ]
+        ),
+        t.variableDeclaration(
+          'let',
+          [
+            t.variableDeclarator(
+              t.identifier(`pitems${select_id}`),
+              t.nullLiteral()
             ),
           ]
         )
@@ -114,25 +170,41 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
           ]),
 
           // target.setAttribute('data-sf-list', p<DELEGATOR>.register_collection(items))
-          t.expressionStatement(
-            t.callExpression(
-              t.memberExpression(
-                t.identifier('target'),
-                t.identifier('setAttribute')
+          t.ifStatement(
+            t.binaryExpression(
+              '!==',
+              t.identifier(`pitems${select_id}`),
+              t.identifier('items')
+            ),
+            t.blockStatement([
+              t.expressionStatement(
+                t.assignmentExpression(
+                  '=',
+                  t.identifier(`pitems${select_id}`),
+                  t.identifier('items')
+                )
               ),
-              [
-                t.stringLiteral('data-sf-list'),
+              t.expressionStatement(
                 t.callExpression(
                   t.memberExpression(
-                    param(delegatorIndex.index),
-                    t.identifier('register_collection')
+                    t.identifier('target'),
+                    t.identifier('setAttribute')
                   ),
                   [
-                    t.identifier('items')
+                    t.stringLiteral('data-sf-list'),
+                    t.callExpression(
+                      t.memberExpression(
+                        param(delegatorIndex.index),
+                        t.identifier('register_collection')
+                      ),
+                      [
+                        t.identifier('items')
+                      ]
+                    )
                   ]
                 )
-              ]
-            )
+              ),
+            ])
           ),
 
           // if (replaces) { ... }
@@ -202,15 +274,7 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                       applier(),
                       [
                         t.identifier('element'),
-                        t.callExpression(
-                          t.memberExpression(
-                            t.identifier('items'),
-                            t.identifier('at')
-                          ),
-                          [
-                            t.identifier('index')
-                          ]
-                        )
+                        at(t.identifier('index'))
                       ]
                     )
                   ),
@@ -308,18 +372,12 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                     ),
                     t.variableDeclarator(
                       t.identifier('value'),
-                      t.callExpression(
-                        t.memberExpression(
-                          t.identifier('items'),
-                          t.identifier('at')
-                        ),
-                        [
-                          t.binaryExpression(
-                            '+',
-                            t.identifier('i'),
-                            t.identifier('old_size')
-                          )
-                        ]
+                      at(
+                        t.binaryExpression(
+                          '+',
+                          t.identifier('i'),
+                          t.identifier('old_size')
+                        )
                       )
                     )
                   ]),
@@ -399,8 +457,14 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
               // vmN(elementsN[id], items.at(id));
               t.expressionStatement(
                 t.callExpression(applier(), [
-                  t.memberExpression(elements(), t.identifier('id'), true),
-                  t.callExpression(t.memberExpression(t.identifier('items'), t.identifier('at')), [t.identifier('id')])
+                  element_at(t.identifier('id')),
+                  t.callExpression(
+                    t.memberExpression(
+                      t.identifier('items'),
+                      t.identifier('at')
+                    ),
+                    [t.identifier('id')]
+                  )
                 ])
               )
             ])
@@ -414,32 +478,116 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
               t.variableDeclaration('const', [
                 t.variableDeclarator(
                   t.identifier('element'),
-                  t.memberExpression(
-                    elements(),
-                    t.identifier('id'),
-                    true
-                  )
+                  element_at(t.identifier('id'))
                 )
               ]),
               // element.remove();
               t.expressionStatement(
                 t.callExpression(t.memberExpression(t.identifier('element'), t.identifier('remove')), [])
               ),
-              // elements.splice(id, 1)
+              // elements[id] = null
               t.expressionStatement(
-                t.callExpression(
+                t.assignmentExpression(
+                  '=',
                   t.memberExpression(
                     elements(),
-                    t.identifier('splice')
-                  ),
-                  [
                     t.identifier('id'),
-                    t.numericLiteral(1)
-                  ]
+                    true
+                  ),
+                  t.nullLiteral()
                 )
               )
             ])
           ),
+
+          // CLearing removes
+          t.ifStatement(
+            t.binaryExpression(
+              '>',
+              t.memberExpression(
+                t.identifier('removes'),
+                t.identifier('size')
+              ),
+              t.numericLiteral(0)
+            ),
+            t.blockStatement([
+              t.variableDeclaration(
+                'let',
+                [
+                  t.variableDeclarator(t.identifier('write'), t.numericLiteral(0))
+                ]
+              ),
+              t.forStatement(
+                t.variableDeclaration(
+                  'let',
+                  [
+                    t.variableDeclarator(
+                      t.identifier('read'),
+                      t.numericLiteral(0)
+                    )
+                  ]
+                ),
+                t.binaryExpression(
+                  '<',
+                  t.identifier('read'),
+                  t.memberExpression(
+                    elements(),
+                    t.identifier('length')
+                  )
+                ),
+                t.updateExpression(
+                  '++',
+                  t.identifier('read')
+                ),
+                t.blockStatement([
+                  t.variableDeclaration(
+                    'const',
+                    [
+                      t.variableDeclarator(
+                        t.identifier('element'),
+                        t.memberExpression(
+                          elements(),
+                          t.identifier('read'),
+                          true
+                        )
+                      )
+                    ]
+                  ),
+                  t.ifStatement(
+                    t.binaryExpression(
+                      '!==',
+                      t.identifier('element'),
+                      t.nullLiteral()
+                    ),
+                    t.expressionStatement(
+                      t.assignmentExpression(
+                        '=',
+                        t.memberExpression(
+                          elements(),
+                          t.updateExpression(
+                            '++',
+                            t.identifier('write')
+                          ),
+                          true
+                        ),
+                        t.identifier('element')
+                      )
+                    )
+                  )
+                ])
+              ),
+              t.expressionStatement(
+                t.assignmentExpression(
+                  '=',
+                  t.memberExpression(
+                    elements(),
+                    t.identifier('length')
+                  ),
+                  t.identifier('write')
+                )
+              )
+            ])
+          )
         ])
       ]
     }

@@ -21,7 +21,7 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   }
 
   public unmap(index: number): number {
-    const removed_before = index > 0 ? this._tree.count(index - 1) : 0
+    const removed_before = index > 0 ? this._tree.count(index + this._shift - 1) : 0
 
     return index + this._shift - removed_before
   }

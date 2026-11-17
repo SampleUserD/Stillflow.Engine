@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
-import { stillflow_plugin } from './dist/vite.es'
+import { stillflow_plugin } from './dist/vite.es.js'
 import dts from 'vite-plugin-dts'
 
 export default defineConfig(({ mode }) => {
@@ -16,8 +16,8 @@ export default defineConfig(({ mode }) => {
         lib: {
           // Точка входа твоей библиотеки
           entry: {
-            index: resolve(__dirname, 'src/index.ts'),
-            vite: resolve(__dirname, 'src/vite.plugin.ts')
+            index: resolve(import.meta.dirname, 'src/index.ts'),
+            vite: resolve(import.meta.dirname, 'src/vite.plugin.ts')
           },
 
           // Имя глобальной переменной (нужно только для UMD/IIFE)
