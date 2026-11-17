@@ -92,7 +92,7 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
-    this._view.items.mark_removed(this._view.items.map(id))
+    this._view.items.mark_removed(id)
     this._stillflow.commit()
   }
 

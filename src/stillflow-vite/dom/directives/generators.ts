@@ -425,6 +425,19 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
               t.expressionStatement(
                 t.callExpression(t.memberExpression(t.identifier('element'), t.identifier('remove')), [])
               ),
+              // elements.splice(id, 1)
+              t.expressionStatement(
+                t.callExpression(
+                  t.memberExpression(
+                    elements(),
+                    t.identifier('splice')
+                  ),
+                  [
+                    t.identifier('id'),
+                    t.numericLiteral(1)
+                  ]
+                )
+              )
             ])
           ),
         ])

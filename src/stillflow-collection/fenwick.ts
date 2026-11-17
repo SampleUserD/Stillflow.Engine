@@ -21,15 +21,19 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   }
 
   public unmap(index: number): number {
-    return index - this._tree.count(index)
+    const removed_before = index > 0 ? this._tree.count(index - 1) : 0
+
+    return index + this._shift - removed_before
   }
 
   public map(id: number): number {
     let physical_index = 0
     let step = 1
 
+    const active_length = this._data.length
+
     // Находим наибольшую степень двойки <= size
-    while (step * 2 <= this._size) {
+    while (step * 2 < active_length) {
       step *= 2
     }
 
@@ -37,9 +41,9 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
       const next = physical_index + index
 
       // Не выходим за границы данных
-      if (next <= this._data.length) {
+      if (next < active_length) {
         // count(next) теперь корректен благодаря двойному Фенвику
-        const removed = this._tree.count(next)
+        const removed = this._tree.count(next - 1)
         const logical = next - removed
 
         if (logical <= id) {
@@ -89,6 +93,13 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   public shrink(): void {
     this._data.splice(0, this._shift)
     this._shift = 0
+
+    const removes = Array.from(this._removes).sort((i, j) => j - i)
+
+    for (const id of removes) {
+      this._tree.add(id, -FenwickCollection.REMOVE_COUNT)
+      this._data.splice(id, 1)
+    }
 
     this._removes.clear()
   }
