@@ -89,26 +89,29 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     const removes = Array.from(this._removes).sort((i, j) => j - i)
 
     for (const id of removes) {
+      this._tree.add(id, -FenwickCollection.REMOVE_COUNT)
       this._data.splice(id, 1)
     }
 
     this._removes.clear()
-
-    this._size = this._data.length + 1
-    this._tree = new Fenwick(this._size)
   }
 
   public mark_cleared(): void {
     this._shift = this._data.length
     this._size = this._data.length + 1
 
-    this._removes.clear()
+    for (const id of this._removes) {
+      this._tree.add(id, -FenwickCollection.REMOVE_COUNT)
+    }
 
-    this._tree = new Fenwick(this._size)
+    this._removes.clear()
   }
 
   public mark_removed(index: number): void {
-    this.mark_removed_range(index, index)
+    if (this._removes.has(index) === false) {
+      this._tree.add(index, FenwickCollection.REMOVE_COUNT)
+      this._removes.add(index)
+    }
   }
 
   public mark_removed_range(left: number, right: number): void {
@@ -117,10 +120,7 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     }
 
     for (let index = left; index <= right; index++) {
-      if (this._removes.has(index) === false) {
-        this._tree.add(index, FenwickCollection.REMOVE_COUNT)
-        this._removes.add(index)
-      }
+      this.mark_removed(index)
     }
   }
 

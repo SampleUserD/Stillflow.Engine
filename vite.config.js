@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    base: './output/',
+    base: '/output/',
     plugins: [stillflow_plugin()],
     build: {
       minify: false,

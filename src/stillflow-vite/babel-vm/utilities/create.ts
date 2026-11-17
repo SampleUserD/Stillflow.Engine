@@ -9,6 +9,7 @@ export function create<Input extends { bytecode: ArrayLike<number> }, Context ex
     const bytecode = input.bytecode
 
     const body: types.Statement[] = []
+    const outer: types.Statement[] = []
 
     body.push(...configurator.preamble(context))
 
@@ -18,7 +19,10 @@ export function create<Input extends { bytecode: ArrayLike<number> }, Context ex
       const size = bytecode[offset]
       const operation = bytecode[offset + 1]
 
-      body.push(...configurator.generators[operation](bytecode, offset, context))
+      const token = configurator.generators[operation](bytecode, offset, context)
+
+      body.push(...token.body)
+      outer.push(...token.outer)
 
       offset += size
     }
@@ -27,6 +31,7 @@ export function create<Input extends { bytecode: ArrayLike<number> }, Context ex
 
     return {
       payload,
+      outer,
       body
     }
   }

@@ -6,7 +6,11 @@ import { TransformResult } from '@/stillflow-vite/dom/build-vm/transform'
 import { Environment } from "@/stillflow-vite/dom/environment"
 import { types } from '@babel/core'
 
-type VMGenerated = { payload: vm.Payload, body: types.Statement[] }
+type VMGenerated = {
+  payload: vm.Payload,
+  body: types.Statement[],
+  outer: types.Statement[]
+}
 
 function build_imports(): types.Statement[] {
   return [
@@ -30,21 +34,9 @@ function build_imports(): types.Statement[] {
           types.identifier('SF_CACHE_TEXT')
         ),
         types.importSpecifier(
-          types.identifier('SF_CONTEXT'),
-          types.identifier('SF_CONTEXT')
-        ),
-        types.importSpecifier(
-          types.identifier('SF_HANDLERS'),
-          types.identifier('SF_HANDLERS')
-        ),
-        types.importSpecifier(
-          types.identifier('SF_LISTENED'),
-          types.identifier('SF_LISTENED')
-        ),
-        types.importSpecifier(
           types.identifier('SF_ANY'),
           types.identifier('SF_ANY')
-        )
+        ),
       ],
       types.stringLiteral('stillflow.engine')
     )
@@ -120,7 +112,63 @@ export function build_module_from(root: Template, environment: Environment) {
     body.push(...build_elements(index))
   }
 
+  const rootIndex = environment.template_map.get(root)!
+
+  body.push(
+    types.variableDeclaration('const', [
+      types.variableDeclarator(
+        types.identifier('set_data'),
+        types.memberExpression(
+          types.callExpression(
+            types.memberExpression(
+              types.identifier('Object'),
+              types.identifier('getOwnPropertyDescriptor')
+            ),
+            [
+              types.memberExpression(
+                types.identifier('CharacterData'),
+                types.identifier('prototype')
+              ),
+              types.stringLiteral('data')
+            ]
+          ),
+          types.identifier('set')
+        )
+      ),
+      types.variableDeclarator(
+        types.identifier('set_text'),
+        types.memberExpression(
+          types.callExpression(
+            types.memberExpression(
+              types.identifier('Object'),
+              types.identifier('getOwnPropertyDescriptor')
+            ),
+            [
+              types.memberExpression(
+                types.identifier('Node'),
+                types.identifier('prototype')
+              ),
+              types.stringLiteral('textContent')
+            ]
+          ),
+          types.identifier('set')
+        )
+      ),
+      types.variableDeclarator(
+        types.identifier('replace_children'),
+        types.memberExpression(
+          types.memberExpression(
+            types.identifier('Element'),
+            types.identifier('prototype')
+          ),
+          types.identifier('replaceChildren')
+        )
+      ),
+    ])
+  )
+
   for (let id = 0; id < vm_generated.length; id++) {
+    body.push(...vm_generated[id].outer)
     body.push(
       types.variableDeclaration('const', [
         types.variableDeclarator(
@@ -131,13 +179,9 @@ export function build_module_from(root: Template, environment: Environment) {
     )
   }
 
-  const rootIndex = environment.template_map.get(root)!
-
   body.push(
     types.variableDeclaration('const', [
-      types.variableDeclarator(types.identifier('app'), types.identifier(`vm${rootIndex}`))
-    ]),
-    types.variableDeclaration('const', [
+      types.variableDeclarator(types.identifier('app'), types.identifier(`vm${rootIndex}`)),
       types.variableDeclarator(types.identifier('root'), types.identifier(`root${rootIndex}`))
     ])
   )

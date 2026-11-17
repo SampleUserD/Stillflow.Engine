@@ -92,10 +92,7 @@ class BenchmarkApplicationController {
   }
 
   public remove(id: number) {
-    for (let index = 0, size = this._view.items.size; index < size; index += 2) {
-      this._view.items.mark_removed(index)
-    }
-
+    this._view.items.mark_removed(id)
     this._stillflow.commit()
   }
 
