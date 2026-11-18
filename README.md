@@ -1,9 +1,9 @@
 # Stillflow
 
-[![npm version](https://shields.io)](https://www.npmjs.com/package/stillflow.engine)
-[![bundle size](https://shields.io)](https://bundlephobia.com/package/stillflow.engine@0.6.5)
-[![dependencies](https://shields.io)](https://npmgraph.js.org/?q=stillflow.engine)
-[![license](https://shields.io)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/stillflow.engine)](https://www.npmjs.com/package/stillflow.engine)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/stillflow.engine)](https://bundlephobia.com/package/stillflow.engine@0.6.5)
+[![dependencies](https://img.shields.io/depfu/dependencies/github/SampleUserD%2FStillflow.Engine)](https://npmgraph.js.org/?q=stillflow.engine)
+[![license](https://img.shields.io/npm/l/stillflow.engine)](./LICENSE)
 
 A headless, transaction-based UI engine with AOT compilation, designed for predictable performance and minimal memory overhead (~2.8 kB gzipped, zero runtime dependencies).
 
