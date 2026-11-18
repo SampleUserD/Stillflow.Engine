@@ -20,8 +20,9 @@ export interface ImportInformation {
 
 export interface Environment extends PluginPass {
   elements: NodePath<types.JSXElement>[],
-  expanding: Map<string, BuildTimeDOMElement>,
+  expanding: Set<string>,
   components: Map<string, ComponentInformation>,
   template_map: Map<Template, number>,
-  transform_map: Map<TransformResult, number>
+  transform_map: Map<TransformResult, number>,
+  counters: Map<string, number>
 }

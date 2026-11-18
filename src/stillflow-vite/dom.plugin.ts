@@ -112,7 +112,8 @@ export default function StillflowDOMFabric({ node_module, path, babel, fs, parse
 
             state.components = components
             state.elements = jsx_elements
-            state.expanding = new Map()
+            state.expanding = new Set()
+            state.counters = new Map()
             state.template_map = new Map()
             state.transform_map = new Map()
 

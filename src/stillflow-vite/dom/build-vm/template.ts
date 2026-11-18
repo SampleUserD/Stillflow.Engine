@@ -7,7 +7,7 @@ import { Environment } from '@/stillflow-vite/dom/environment';
 export interface Template {
   root: TransformResult,
   node: BuildTimeDOMElement,
-  nodes: vm.Payload,
+  nodes: BuildTimeDOMElement[],
   bytecode: ArrayLike<number>,
   strings: vm.Payload,
   functions: vm.Payload,

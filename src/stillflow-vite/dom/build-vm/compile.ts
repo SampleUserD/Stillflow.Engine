@@ -4,13 +4,11 @@ import { types } from '@babel/core'
 import { Codes } from '@/stillflow-vite/dom/directives/codes'
 import { BuildTimeDOMElement } from '@/stillflow-vite/dom/build-vm/build.dom'
 import { Template } from '@/stillflow-vite/dom/build-vm/template'
-import { ComponentInformation, Environment } from '@/stillflow-vite/dom/environment'
+import { Environment } from '@/stillflow-vite/dom/environment'
 import { transform } from '@/stillflow-vite/dom/build-vm/transform'
 
 export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) {
   let environment: Environment
-
-  const template_cache = new Map<string, Template>()
 
   function resolve(template: Template) {
     return types.identifier(`vm${environment.template_map.get(template)!}`)
@@ -21,19 +19,15 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
   }
 
   function compile(node: BuildTimeDOMElement): Template {
-    if (template_cache.has(node.properties.name)) {
-      return template_cache.get(node.properties.name)
-    }
-
     const emitter = new vm.Emitter()
     const strings = new vm.Payload()
     const functions = new vm.Payload()
     const templates = new vm.Payload()
-    const nodes = new vm.Payload()
+    const nodes = new Array<BuildTimeDOMElement>()
 
     let next_node_id = 0
 
-    function walk(current: BuildTimeDOMElement) {
+    function walk(current: BuildTimeDOMElement, path: number[] = []) {
       const { modifiers, recursive } = current.properties
 
       if (recursive !== undefined) {
@@ -93,43 +87,36 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
 
       if (has_for) {
         const iterate = modifiers!.iterate!
-
+        const element = map(iterate.each)
         const selectIndex = functions.add(iterate.select, vm.Payload.RESOLVE_NODE)
-        const templateIndex = templates.add(compile(map(iterate.each)), resolve)
 
-        emitter.emit(Codes.FOR, current_id, selectIndex.index, templateIndex.index)
+        environment.expanding.add(path.join(':'))
+
+        const templateIndex = templates.add(compile(element), resolve)
+        const nodeIndex = nodes.push(element) - 1
+
+        emitter.emit(Codes.FOR, current_id, selectIndex.index, templateIndex.index, nodeIndex)
 
         return
       }
 
-      for (const child of current.children) {
-        walk(child)
+      for (let index = 0; index < current.children.length; index++) {
+        walk(current.children[index], [...path, index])
       }
     }
 
-    const template = {
+    walk(node)
+
+    return {
       node,
-      root: null,
+      root: transform(node, environment),
       nodes: nodes,
       strings: strings,
-      bytecode: null,
+      bytecode: emitter.finish(),
       functions: functions,
       templates: templates,
       environment
     }
-
-    if (environment.expanding.has(node.properties.name)) {
-      template_cache.set(node.properties.name, template)
-      walk(node.properties.inline)
-    } else {
-      walk(node)
-      template_cache.set(node.properties.name, template)
-    }
-
-    template.root = transform(node)
-    template.bytecode = emitter.finish()
-
-    return template
   }
 
   return {

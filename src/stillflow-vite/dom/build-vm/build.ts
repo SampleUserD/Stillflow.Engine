@@ -28,6 +28,7 @@ function build_imports(): types.Statement[] {
 
 function build_transform(transform: TransformResult, index: number): types.Statement[] {
   return [
+    ...transform.outer,
     types.variableDeclaration('const', [
       types.variableDeclarator(
         types.identifier(`transform${index}`),

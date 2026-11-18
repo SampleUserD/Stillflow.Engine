@@ -21,7 +21,9 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const container = bytecode[offset + 2]
     const handler = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 3])
 
-    const id = context.counters.creations++
+    const id = context.environment.counters.get('sf_if') || 0
+
+    context.environment.counters.set('sf_if', id + 1)
 
     return {
       outer: [
@@ -75,18 +77,27 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const container = bytecode[offset + 2]
     const select = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 3])
     const template = context.templates.get<Template>(bytecode[offset + 4])
+    const node = context.nodes[bytecode[offset + 5]]
+
+    let applier: () => t.Expression
+
+    if (!node.properties.recursive) {
+      const templateIndex = context.payload.add(template, value => t.identifier(`vm${context.environment.template_map.get(value)}`))
+      applier = () => param(templateIndex.index)
+    } else {
+      applier = () => t.identifier(`vm${context.environment.transform_map.get(context.root)}`)
+    }
+
+    const templateRoot = () => t.identifier('root_')
 
     // pN индексы
-    const templateIndex = context.payload.add(template, value => t.identifier(`vm${context.environment.template_map.get(value)}`))   // vmN (applier)
-    const rootIndex = context.payload.add(template.root, value => t.identifier(`root${context.environment.transform_map.get(value)}`))  // rootN (ленивый DOM)
+    // vmN (applier)
     const elementsIndex = context.payload.add([], () => t.identifier(`elements${context.environment.transform_map.get(template.root)}`))         // elementsN (мемоизированный массив)
     const delegatorIndex = context.payload.add(context.delegator, () => t.identifier('DELEGATOR'))
 
     // Хелперы для генерации AST
     const elements = () => param(elementsIndex.index) // elementsN()
     const target = () => nodeCache(container)
-    const applier = () => param(templateIndex.index)
-    const templateRoot = () => param(rootIndex.index) // rootN
     const at = (index: t.Expression) => {
       return t.callExpression(
         t.memberExpression(
@@ -118,7 +129,9 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
       )
     }
 
-    const select_id = context.counters.creations++
+    const select_id = context.environment.counters.get('sf_select') || 0
+
+    context.environment.counters.set('sf_select', select_id + 1)
 
     return {
       outer: [
@@ -142,6 +155,17 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
         )
       ],
       body: [
+        t.variableDeclaration(
+          'const',
+          [
+            t.variableDeclarator(
+              t.identifier('root_'),
+              node.properties.recursive ?
+                t.callExpression(applier(), [t.identifier('root')]) :
+                t.identifier(`root${context.environment.transform_map.get(template.root)}`)
+            )
+          ]
+        ),
         t.blockStatement([
           // const items = p<select>(context);
           t.variableDeclaration('const', [
@@ -612,7 +636,9 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
   [Codes.TEXT](bytecode, offset, context) {
     const container = bytecode[offset + 2]
     const handler = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 3])
-    const id = context.counters.texts++
+    const id = context.environment.counters.get('sf_text') || 0
+
+    context.environment.counters.set('sf_text', id + 1)
 
     return {
       outer: [
@@ -661,7 +687,9 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const event = context.strings.get<string>(bytecode[offset + 3])
     const handler = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 4])
 
-    const id = context.counters.registrations++
+    const id = context.environment.counters.get('sf_events') || 0
+
+    context.environment.counters.set('sf_events', id + 1)
 
     return {
       outer: [
@@ -709,7 +737,9 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     const property = context.strings.get<string>(bytecode[offset + 3])
     const handler = context.functions.get<t.ArrowFunctionExpression>(bytecode[offset + 4])
 
-    const id = context.counters.properties++
+    const id = context.environment.counters.get('sf_property') || 0
+
+    context.environment.counters.set('sf_property', id + 1)
 
     return {
       outer: [

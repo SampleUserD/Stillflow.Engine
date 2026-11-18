@@ -9,24 +9,10 @@ import { types } from '@babel/core'
 export type Context = Template & {
   payload: vm.Payload,
   delegator: typeof DELEGATOR,
-  tables: Map<number, { props: types.Node[] }>,
-  counters: {
-    registrations: number,
-    properties: number,
-    creations: number,
-    texts: number
-  }
+  tables: Map<number, { props: types.Node[] }>
 }
 
 const dom_vm = vm.create<Template, Context>({
-  context: {
-    counters: {
-      registrations: 0,
-      properties: 0,
-      creations: 0,
-      texts: 0
-    }
-  },
   generators,
   preamble(context) {
     const markup_result = markup(context.node)
@@ -43,8 +29,7 @@ const create_context = (payload: vm.Payload, input: Template, configurator: vm.C
     ...input,
     payload,
     delegator: DELEGATOR,
-    tables: new Map(),
-    counters: configurator.context.counters as any
+    tables: new Map()
   }
 }
 
