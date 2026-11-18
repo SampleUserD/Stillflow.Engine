@@ -304,11 +304,8 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                   ]
                 )
               ),
-              // return
-              t.returnStatement()
-            ])
+            ]),
           ),
-
           // if (clears) { ... }
           t.ifStatement(
             t.identifier('clears'),
@@ -412,7 +409,6 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
               )
             ])
           ),
-
           // for (const [i, j] of swaps.entries()) { ... }
           t.forOfStatement(
             t.variableDeclaration('const', [
@@ -474,11 +470,27 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
             t.variableDeclaration('const', [t.variableDeclarator(t.identifier('id'))]),
             t.identifier('removes'),
             t.blockStatement([
+              t.variableDeclaration('const', [
+                t.variableDeclarator(
+                  t.identifier('pid'),
+                  t.callExpression(
+                    t.memberExpression(
+                      t.identifier('items'),
+                      t.identifier('unmap')
+                    ),
+                    [t.identifier('id')]
+                  )
+                )
+              ]),
               // const element = elementsN[id];
               t.variableDeclaration('const', [
                 t.variableDeclarator(
                   t.identifier('element'),
-                  element_at(t.identifier('id'))
+                  t.memberExpression(
+                    elements(),
+                    t.identifier('pid'),
+                    true
+                  )
                 )
               ]),
               // element.remove();
@@ -491,7 +503,7 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                   '=',
                   t.memberExpression(
                     elements(),
-                    t.identifier('id'),
+                    t.identifier('pid'),
                     true
                   ),
                   t.nullLiteral()
@@ -559,20 +571,22 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                       t.identifier('element'),
                       t.nullLiteral()
                     ),
-                    t.expressionStatement(
-                      t.assignmentExpression(
-                        '=',
-                        t.memberExpression(
-                          elements(),
-                          t.updateExpression(
-                            '++',
-                            t.identifier('write')
+                    t.blockStatement([
+                      t.expressionStatement(
+                        t.assignmentExpression(
+                          '=',
+                          t.memberExpression(
+                            elements(),
+                            t.updateExpression(
+                              '++',
+                              t.identifier('write')
+                            ),
+                            true
                           ),
-                          true
-                        ),
-                        t.identifier('element')
+                          t.identifier('element')
+                        )
                       )
-                    )
+                    ])
                   )
                 ])
               ),

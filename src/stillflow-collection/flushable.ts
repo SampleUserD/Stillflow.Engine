@@ -85,6 +85,8 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
 
   public flush(): Delta {
     this._front.replaces = (this._front.addes > 0) && (this._front.clears)
+    this._front.clears = (this._front.addes <= 0) && (this._front.clears)
+    this._front.addes = this._front.replaces ? 0 : this._front.addes
 
     const temporary = this._front
     this._front = this._back

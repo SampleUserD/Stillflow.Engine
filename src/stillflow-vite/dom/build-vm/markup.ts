@@ -14,7 +14,9 @@ interface TraversalContext {
 }
 
 function traverse_template(node: BuildTimeDOMElement, current: types.Expression, context: TraversalContext): boolean {
-  const { modifiers } = node.properties
+  let { modifiers } = node.properties
+
+  modifiers = modifiers || Object.create(null)
 
   const has_modifiers = Object.keys(modifiers).length > 0
 

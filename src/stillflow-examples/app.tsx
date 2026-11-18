@@ -232,12 +232,27 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
   )
 }
 
+type ItemData = {
+  text: string
+  items: collections.Flushable<ItemData>
+}
+
+function Item() {
+  return (
+    <jsxdom.div>
+      <jsxdom.div>{(context: ItemData) => context.text}</jsxdom.div>
+      <jsxdom.div sf:for={(context: ItemData) => context.items} sf:each={() => <Item />}></jsxdom.div>
+    </jsxdom.div>
+  )
+}
+
 const controller = new BenchmarkApplicationController()
 
-const Fabric = $(<BenchmarkApplicationView controller={controller}/>)
+const Fabric = $(<BenchmarkApplicationView controller={controller} />)
 
 const { app, root } = Fabric()
 
 document.body.appendChild(root)
 
 controller.core.on(() => app(root, {}))
+controller.core.commit()

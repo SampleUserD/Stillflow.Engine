@@ -21,7 +21,7 @@ function patch(record: Record<string, any>, key: string, value: any) {
   record[key] = value
 }
 
-export type BuildTimeDOMElement = Binding<Properties<any, any>>
+export type BuildTimeDOMElement = Binding<Properties<any, any> & Partial<{ recursive: ComponentInformation, inline: BuildTimeDOMElement }>>
 
 function inline(component: ComponentInformation, properties: Record<string, types.Node>, state: Environment): BuildTimeDOMElement {
   const body = types.cloneNode(component.body, true)

@@ -4,11 +4,13 @@ import { types } from '@babel/core'
 import { Codes } from '@/stillflow-vite/dom/directives/codes'
 import { BuildTimeDOMElement } from '@/stillflow-vite/dom/build-vm/build.dom'
 import { Template } from '@/stillflow-vite/dom/build-vm/template'
-import { Environment } from '@/stillflow-vite/dom/environment'
+import { ComponentInformation, Environment } from '@/stillflow-vite/dom/environment'
 import { transform } from '@/stillflow-vite/dom/build-vm/transform'
 
 export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) {
   let environment: Environment
+
+  const template_cache = new Map<string, Template>()
 
   function resolve(template: Template) {
     return types.identifier(`vm${environment.template_map.get(template)!}`)
@@ -19,6 +21,10 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
   }
 
   function compile(node: BuildTimeDOMElement): Template {
+    if (template_cache.has(node.properties.name)) {
+      return template_cache.get(node.properties.name)
+    }
+
     const emitter = new vm.Emitter()
     const strings = new vm.Payload()
     const functions = new vm.Payload()
@@ -28,7 +34,11 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
     let next_node_id = 0
 
     function walk(current: BuildTimeDOMElement) {
-      const { modifiers } = current.properties
+      const { modifiers, recursive } = current.properties
+
+      if (recursive !== undefined) {
+        return
+      }
 
       const has_properties = modifiers?.properties !== undefined
       const has_events = modifiers?.events !== undefined
@@ -97,18 +107,29 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
       }
     }
 
-    walk(node)
-
-    return {
+    const template = {
       node,
-      root: transform(node),
+      root: null,
       nodes: nodes,
       strings: strings,
-      bytecode: emitter.finish(),
+      bytecode: null,
       functions: functions,
       templates: templates,
       environment
     }
+
+    if (environment.expanding.has(node.properties.name)) {
+      template_cache.set(node.properties.name, template)
+      walk(node.properties.inline)
+    } else {
+      walk(node)
+      template_cache.set(node.properties.name, template)
+    }
+
+    template.root = transform(node)
+    template.bytecode = emitter.finish()
+
+    return template
   }
 
   return {

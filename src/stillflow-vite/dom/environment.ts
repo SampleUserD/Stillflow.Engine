@@ -1,7 +1,7 @@
-import * as vm from '@/stillflow-vite/babel-vm/index'
+import type { BuildTimeDOMElement } from '@/stillflow-vite/dom/build-vm/build.dom'
 
-import { Template } from "@/stillflow-vite/dom/build-vm/template"
-import { TransformResult } from "@/stillflow-vite/dom/build-vm/transform"
+import type { Template } from "@/stillflow-vite/dom/build-vm/template"
+import type { TransformResult } from "@/stillflow-vite/dom/build-vm/transform"
 import { NodePath, PluginPass, Scope, types } from "@babel/core"
 
 export interface ComponentInformation {
@@ -20,6 +20,7 @@ export interface ImportInformation {
 
 export interface Environment extends PluginPass {
   elements: NodePath<types.JSXElement>[],
+  expanding: Map<string, BuildTimeDOMElement>,
   components: Map<string, ComponentInformation>,
   template_map: Map<Template, number>,
   transform_map: Map<TransformResult, number>
