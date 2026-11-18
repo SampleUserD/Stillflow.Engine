@@ -1,7 +1,12 @@
 import { defineConfig } from 'vite'
 import { resolve } from 'path'
-import { stillflow_plugin } from './dist/vite.es.js'
 import dts from 'vite-plugin-dts'
+import { existsSync } from 'fs'
+
+const has_built_plugin = existsSync('./dist/vite.es.js')
+const plugins = has_built_plugin
+  ? [(await import('./dist/vite.es.js')).stillflow_plugin()]
+  : []
 
 export default defineConfig(({ mode }) => {
   if (mode === 'production') {
@@ -39,7 +44,7 @@ export default defineConfig(({ mode }) => {
 
   return {
     base: '/output/',
-    plugins: [stillflow_plugin()],
+    plugins,
     build: {
       minify: false,
       esbuild: {
