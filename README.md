@@ -1,117 +1,77 @@
 # Stillflow
-> A headless, transaction-based UI engine with AOT compilation with predictable performance and memory usage.
 
-## Reasons
-I built **Stillflow** to solve my own architectural problems. I wanted explicit control over the life cycle of application with predictable performance with serializable state out of box. My solution does not use **Virtual DOM**, because it's a single most *unpredictable* thing in **UI-heavy applications**, because it does diffing and patch by **O(n)** with a heavy constant. 
+[![npm version](https://shields.io)](https://npmjs.com)
+[![bundle size](https://shields.io)](https://bundlephobia.com)
+[![dependencies](https://shields.io)](https://js.org)
+[![license](https://shields.io)](./LICENSE)
+
+A headless, transaction-based UI engine with AOT compilation, designed for predictable performance and minimal memory overhead (~2.8 kB gzipped, zero runtime dependencies).
+
+---
+
+## Why Stillflow?
+
+Built to achieve explicit control over the application lifecycle with predictable performance and out-of-the-box serializable state, Stillflow **does not use a Virtual DOM**. Instead of unpredictable $O(n)$ VDOM diffing, it compiles JSX ahead-of-time into flat bytecode instructions and updates the DOM directly through atomic transactions.
+
+---
 
 ## Philosophy
 
-> UI = State + Projections + Bindings + Feedback loop.
+$$\text{UI} = \text{State} + \text{Projections} + \text{Bindings} + \text{Feedback Loop}$$
 
-I think it is a **misconception** that `UI = f(state)`, because every `UI` has *user and document events* (`click`, `input`, `load` and *etc.*). So I derive that `state = g(UI)`, where `g` **is not** an inverse function of `f`, because we cannot restore *state* from `UI` fully in the most cases, because **UI is a subset of state**. 
+* **UI is a subset of State:** Real applications deal with user and document events (`click`, `input`, `load`, etc.), meaning state cannot be fully reconstructed from the UI alone.
+* **Map-State as a Single Source of Truth:** Global state is modeled as a clean, serializable structure ("map-state") free of symbols, functions, or opaque class instances.
+* **Explicit Reactivity over Implicit Magic:** Stillflow uses an explicit `commit()` boundary where mutations accumulate in double-buffered queues and apply atomically.
 
-Also I think of a `state` as  a `global state` and a simple `"map"` ([Read about it here](http://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Map)) filled with `primitives` (`number`, `string`, `object` and `array`, but not `symbol`, `function` or `class instances`) as I call it `"map-state"`. You could have thought that it is antipattern and a bad practice so it is out of consideration. But it makes the `state` the **single source of truth** so we can restore `UI` from the *state* fully [`UI = f(state)`]. The *map-state* makes the *serialization* of *state* easier and predictable.
+---
 
-Also I think that **explicit reactivity is better than implicit reactivity**. So **Stillflow** has `commit()` method that controls the update time. Before *commit* buffer is full, but changes are not applied to the *map-state*. It makes *state-between-state* an impossible occurrence. It makes the **Stillflow** model transactional and atomic.
+## Key Features
 
-## Features
+1. **AOT Compilation & Bytecode IR** — Compiles JSX inside the `$()` entry point into flat bytecode instructions at build time.
+2. **Transactional Kernel** — Explicit `commit()`, double-buffered delta queues, and atomic updates.
+3. **Keyless List Reconciliation via Fenwick Trees** — Built-in `Flushable` collections backed by resizable `Int32Array` Fenwick trees map logical indices to physical DOM nodes in $O(\log n)$ time.
+4. **Headless Core** — Completely decoupled from the DOM to target custom renderers.
+5. **Type-Safe JSX** — Full TypeScript inference and autocomplete for DOM properties and directives.
 
- 1. **AOT-Compilation** --- Compiles JSX into flat object instructions at build time.
- 2. **Transactional kernel** --- Explicit `commit()`, multi-buffers `buffer()` and atomic updates.
- 3. **Pluggable Collections** --- Built-in Fenwick-based collections for fast clear/remove and Flushable with `flush()` collection for fast `delta` calculations.
- 4. **Headless core** --- The core is completely independent of `DOM`
- 5. **Type-safe JSX** --- Full autocomplete for `DOM` properties and directives (`sf:`)
+---
 
- ## Quick Start
+## Installation
 
-### Let's make some simple Todo application
-
-For a starter you can play with [it in **CodeSandBox**](https://codesandbox.io/p/sandbox/stillflow-engine-starter-3qv9mh). Simple demonstration of the features of **Stillflow**.
-
-You can test some benchmarks on [**CodeSandBox**](https://codesandbox.io/p/sandbox/43vn9g).
-
-```ts
-import { core, collections, operators, runtime } from 'stillflow.engine'
-
-type AppState = {
-  input: string
-}
-
-type TodoItem = {
-  label: string
-}
-
-type TodoState = {
-  input: string,
-  items: collections.Flushable<TodoItem>
-}
-
-const { jsxdom, $ } = runtime
-
-const state = new core.State()
-const stillflow = new core.Stillflow<AppState>(state)
-const factory = stillflow.factory()
-
-factory.add(collections.Flushable.name, () => new collections.Flushable(new collections.Fenwick(100)))
-
-const source = {
-  input: stillflow.variable('input').backref(),
-  items: operators.is(collections.Flushable.name)
-}
-
-const view = stillflow.compile(source)
-const instance: TodoState = stillflow.instantiate(view, factory)
-
-function change(event: any) {
-  instance.input = event.target.value
-  stillflow.commit()
-}
-
-function add() {
-  instance.items.add({ label: instance.input })
-  instance.input = String()
-  stillflow.commit()
-}
-
-function TodoItem() {
-  return (
-    <jsxdom.div>
-      {(context: TodoItem) => context.label}
-    </jsxdom.div>
-  )
-}
-
-function App() {
-  return (
-    <jsxdom.div>
-      <jsxdom.input sf:value={(context: TodoState) => context.input} on:change={change} />
-      <jsxdom.button on:click={add}>
-        Add
-      </jsxdom.button>
-      <jsxdom.div sf:for={(context: TodoState) => context.items} sf:each={() => <TodoItem />} />
-    </jsxdom.div>
-  )
-}
-
-const Fabric = $(<App />)
-
-const { app: update, root } = Fabric()
-
-stillflow.on(() => update(root, instance))
-
-document.body.appendChild(root)
-
-instance.input = String()
-stillflow.commit()
+```bash
+npm install stillflow.engine
 ```
 
-## How it works
+### Vite & TypeScript Setup
 
- 1. **Compile** --- JSX is parsed into an Intermediate Representation (IR).
- 2. **Instantiate** --- State bindings are created.
- 3. **Commit** --- Changes are batched and applied to the DOM via highly optimized appliers.
- 4. **Collections** -- Delta are calculated and `clear/remove` are logical via Fenwick tree and binary lifting, but `shrink` is physical.
+Configure Vite with the Stillflow AOT compiler plugin and point TypeScript JSX to `stillflow.engine`:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite'
+import { stillflow_plugin } from 'stillflow.engine/vite'
+
+export default defineConfig({
+  plugins: [stillflow_plugin()]
+})
+```
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "jsx": "preserve",
+  }
+}
+```
+
+---
+
+## Quick Start
+
+Try Stillflow online in [CodeSandbox](https://codesandbox.io). For a complete Todo application implementation utilizing headless state, Fenwick tree collections, and AOT-compiled components, please refer to the full source code in the reference documentation.
+
+---
 
 ## License
 
-MIT
+[MIT](./LICENSE)

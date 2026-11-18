@@ -19,6 +19,14 @@ export type Context = Template & {
 }
 
 const dom_vm = vm.create<Template, Context>({
+  context: {
+    counters: {
+      registrations: 0,
+      properties: 0,
+      creations: 0,
+      texts: 0
+    }
+  },
   generators,
   preamble(context) {
     const markup_result = markup(context.node)
@@ -30,18 +38,13 @@ const dom_vm = vm.create<Template, Context>({
   }
 })
 
-const create_context = (payload: vm.Payload, input: Template) => {
+const create_context = (payload: vm.Payload, input: Template, configurator: vm.Configurator<Context>) => {
   return {
     ...input,
     payload,
     delegator: DELEGATOR,
     tables: new Map(),
-    counters: {
-      registrations: 0,
-      properties: 0,
-      creations: 0,
-      texts: 0
-    }
+    counters: configurator.context.counters as any
   }
 }
 
