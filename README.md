@@ -1,7 +1,7 @@
 # Stillflow
 
 [![npm version](https://img.shields.io/npm/v/stillflow.engine)](https://www.npmjs.com/package/stillflow.engine)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/stillflow.engine)](https://bundlephobia.com/package/stillflow.engine@0.6.5)
+[![bundle size](https://img.shields.io/bundlephobia/minzip/stillflow.engine)](https://bundlephobia.com/package/stillflow.engine@0.6.7)
 [![dependencies](https://img.shields.io/depfu/dependencies/github/SampleUserD%2FStillflow.Engine)](https://npmgraph.js.org/?q=stillflow.engine)
 [![license](https://img.shields.io/npm/l/stillflow.engine)](./LICENSE)
 
