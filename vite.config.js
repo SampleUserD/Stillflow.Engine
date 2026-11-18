@@ -2,10 +2,13 @@ import { defineConfig } from 'vite'
 import { resolve } from 'path'
 import dts from 'vite-plugin-dts'
 import { existsSync } from 'fs'
+import path from 'path'
+import { pathToFileURL } from 'url'
 
-const has_built_plugin = existsSync('./dist/vite.es.js')
+const plugin_path = path.resolve('./dist/vite.es.js')
+const has_built_plugin = existsSync(plugin_path)
 const plugins = has_built_plugin
-  ? [(await import('./dist/vite.es.js')).stillflow_plugin()]
+  ? [(await import(pathToFileURL(plugin_path).href)).stillflow_plugin()]
   : []
 
 export default defineConfig(({ mode }) => {
