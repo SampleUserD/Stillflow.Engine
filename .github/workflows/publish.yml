@@ -20,10 +20,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://npmjs.org'
       
       - name: Install dependencies
-        run: npm install --no-audit --no-fund --registry=https://npmjs.org
+        run: |
+          rm -f package-lock.json
+          npm install --no-audit --no-fund
       
       - name: Build package
         run: npm run build
