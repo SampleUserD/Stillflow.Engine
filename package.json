@@ -71,7 +71,10 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "typescript": "^5.0.0",
-    "vite-plugin-dts": "^5.1.2"
+    "vite-plugin-dts": "^5.1.2",
+    "@babel/core": "^8.1.2",
+    "@types/babel__core": "^7.20.5",
+    "vite": "^8.3.8"
   },
   "peerDependencies": {
     "@babel/core": "^8.1.2",
