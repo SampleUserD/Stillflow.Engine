@@ -143,15 +143,6 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
             ),
           ]
         ),
-        t.variableDeclaration(
-          'let',
-          [
-            t.variableDeclarator(
-              t.identifier(`pitems${select_id}`),
-              t.nullLiteral()
-            ),
-          ]
-        )
       ],
       body: [
         t.variableDeclaration(
@@ -164,16 +155,6 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
                 t.identifier(`root${context.environment.transform_map.get(template.root)}`)
             )
           ]
-        ),
-        t.expressionStatement(
-          t.assignmentExpression(
-            '=',
-            t.memberExpression(
-              t.identifier('root_'),
-              t.identifier('sf_elements')
-            ),
-            t.arrayExpression([])
-          )
         ),
         t.blockStatement([
           // const items = p<select>(context);
@@ -204,17 +185,22 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
 
           // target.setAttribute('data-sf-list', p<DELEGATOR>.register_collection(items))
           t.ifStatement(
-            t.binaryExpression(
-              '!==',
-              t.identifier(`pitems${select_id}`),
-              t.identifier('items')
+            t.unaryExpression(
+              '!',
+              t.memberExpression(
+                t.identifier('root_'),
+                t.identifier('sf_elements')
+              )
             ),
             t.blockStatement([
               t.expressionStatement(
                 t.assignmentExpression(
                   '=',
-                  t.identifier(`pitems${select_id}`),
-                  t.identifier('items')
+                  t.memberExpression(
+                    t.identifier('root_'),
+                    t.identifier('sf_elements')
+                  ),
+                  t.arrayExpression([])
                 )
               ),
               t.expressionStatement(
