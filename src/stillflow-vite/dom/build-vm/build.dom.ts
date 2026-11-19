@@ -21,7 +21,7 @@ function patch(record: Record<string, any>, key: string, value: any) {
   record[key] = value
 }
 
-export type BuildTimeDOMElement = Binding<Properties<any, any> & Partial<{ recursive: ComponentInformation }>>
+export type BuildTimeDOMElement = Binding<Properties<any, any> & Partial<{ recursive: BuildTimeDOMElement }>>
 
 function inline(component: ComponentInformation, properties: Record<string, types.Node>, state: Environment): BuildTimeDOMElement {
   const body = types.cloneNode(component.body, true)
@@ -35,26 +35,30 @@ function inline(component: ComponentInformation, properties: Record<string, type
   return build_dom_from(body, state)
 }
 
+const inlined = new WeakMap<ComponentInformation, BuildTimeDOMElement>()
+
 export function build_dom_from(node: types.JSXElement, state: Environment, path: number[] = []): BuildTimeDOMElement {
   const tag_name = get_tag_name_without_jsxdom(node)
   const component = state.components.get(tag_name)
 
   const { properties } = extract_attributes(node.openingElement)
 
-  const url = path.join(':')
+  if (component !== undefined) {
+    const url = path.join(':')
 
-  if (state.expanding.has(url)) {
-    return {
-      children: [],
-      properties: {
-        name: tag_name,
-        recursive: component
+    if (state.expanding.has(`${url}-${tag_name}`)) {
+      const inline = inlined.get(component)
+
+      if (inline !== undefined) {
+        inline.properties.recursive = inline
+
+        return inline
       }
     }
-  }
 
-  if (component !== undefined) {
     const result = inline(component, properties, state)
+
+    inlined.set(component, result)
 
     return result
   }

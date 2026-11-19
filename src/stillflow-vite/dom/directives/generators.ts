@@ -81,7 +81,7 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
 
     let applier: () => t.Expression
 
-    if (!node.properties.recursive) {
+    if (node.properties.recursive !== context.node) {
       const templateIndex = context.payload.add(template, value => t.identifier(`vm${context.environment.template_map.get(value)}`))
       applier = () => param(templateIndex.index)
     } else {
@@ -89,14 +89,13 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
     }
 
     const templateRoot = () => t.identifier('root_')
-
-    // pN индексы
-    // vmN (applier)
-    const elementsIndex = context.payload.add([], () => t.identifier(`elements${context.environment.transform_map.get(template.root)}`))         // elementsN (мемоизированный массив)
     const delegatorIndex = context.payload.add(context.delegator, () => t.identifier('DELEGATOR'))
 
     // Хелперы для генерации AST
-    const elements = () => param(elementsIndex.index) // elementsN()
+    const elements = () => t.memberExpression(
+      t.identifier('root_'),
+      t.identifier('sf_elements')
+    )
     const target = () => nodeCache(container)
     const at = (index: t.Expression) => {
       return t.callExpression(
@@ -160,11 +159,21 @@ export const generators: Record<number, (bytecode: ArrayLike<number>, offset: nu
           [
             t.variableDeclarator(
               t.identifier('root_'),
-              node.properties.recursive ?
-                t.callExpression(applier(), [t.identifier('root')]) :
+              node.properties.recursive === context.node ?
+                t.callExpression(t.identifier(`transform${context.environment.transform_map.get(template.root)}`), [t.identifier('root')]) :
                 t.identifier(`root${context.environment.transform_map.get(template.root)}`)
             )
           ]
+        ),
+        t.expressionStatement(
+          t.assignmentExpression(
+            '=',
+            t.memberExpression(
+              t.identifier('root_'),
+              t.identifier('sf_elements')
+            ),
+            t.arrayExpression([])
+          )
         ),
         t.blockStatement([
           // const items = p<select>(context);

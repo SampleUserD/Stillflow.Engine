@@ -2,13 +2,16 @@ import * as vm from '@/stillflow-vite/babel-vm/index'
 
 import { types } from '@babel/core'
 import { Codes } from '@/stillflow-vite/dom/directives/codes'
-import { BuildTimeDOMElement } from '@/stillflow-vite/dom/build-vm/build.dom'
+import { BuildTimeDOMElement, build_dom_from } from '@/stillflow-vite/dom/build-vm/build.dom'
 import { Template } from '@/stillflow-vite/dom/build-vm/template'
 import { Environment } from '@/stillflow-vite/dom/environment'
 import { transform } from '@/stillflow-vite/dom/build-vm/transform'
+import { get_return_argument, get_tag_name_without_jsxdom } from '@/stillflow-vite/dom/helpers/getters'
 
 export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) {
   let environment: Environment
+
+  const template_cache = new WeakMap<BuildTimeDOMElement, Template>()
 
   function resolve(template: Template) {
     return types.identifier(`vm${environment.template_map.get(template)!}`)
@@ -19,6 +22,10 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
   }
 
   function compile(node: BuildTimeDOMElement): Template {
+    if (template_cache.has(node)) {
+      return template_cache.get(node)!
+    }
+
     const emitter = new vm.Emitter()
     const strings = new vm.Payload()
     const functions = new vm.Payload()
@@ -28,11 +35,7 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
     let next_node_id = 0
 
     function walk(current: BuildTimeDOMElement, path: number[] = []) {
-      const { modifiers, recursive } = current.properties
-
-      if (recursive !== undefined) {
-        return
-      }
+      const { modifiers } = current.properties
 
       const has_properties = modifiers?.properties !== undefined
       const has_events = modifiers?.events !== undefined
@@ -87,10 +90,15 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
 
       if (has_for) {
         const iterate = modifiers!.iterate!
-        const element = map(iterate.each)
+        const inner = get_return_argument(iterate.each as types.ArrowFunctionExpression) as types.JSXElement
         const selectIndex = functions.add(iterate.select, vm.Payload.RESOLVE_NODE)
+        const url = `${path.join(':')}-${get_tag_name_without_jsxdom(inner)}`
 
-        environment.expanding.add(path.join(':'))
+        environment.expanding.add(url)
+
+        const element = build_dom_from(inner, environment, path)
+
+        environment.expanding.delete(url)
 
         const templateIndex = templates.add(compile(element), resolve)
         const nodeIndex = nodes.push(element) - 1
@@ -101,13 +109,13 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
       }
 
       for (let index = 0; index < current.children.length; index++) {
-        walk(current.children[index], [...path, index])
+        const child = current.children[index]
+
+        walk(child, [...path, index])
       }
     }
 
-    walk(node)
-
-    return {
+    const template = {
       node,
       root: transform(node, environment),
       nodes: nodes,
@@ -117,6 +125,14 @@ export function create_compiler(map: (each: types.Node) => BuildTimeDOMElement) 
       templates: templates,
       environment
     }
+
+    template_cache.set(node, template)
+
+    walk(node)
+
+    template.bytecode = emitter.finish()
+
+    return template
   }
 
   return {

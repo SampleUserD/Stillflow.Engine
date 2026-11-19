@@ -14,11 +14,11 @@ export function collect_template_map(root: Template): Map<Template, number> {
       return
     }
 
+    map.set(template, map.size)
+
     for (const sub_template of template.templates.values) {
       walk(sub_template)
     }
-
-    map.set(template, map.size)
   }
 
   walk(root)
