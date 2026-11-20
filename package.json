@@ -1,6 +1,6 @@
 {
   "name": "stillflow.engine",
-  "version": "0.6.11",
+  "version": "0.7.0",
   "description": "A headless, transaction-based UI engine with AOT compilation.",
   "type": "module",
   "main": "./dist/index.es.js",
