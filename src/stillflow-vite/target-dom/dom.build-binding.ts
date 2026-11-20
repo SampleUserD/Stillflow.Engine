@@ -22,16 +22,24 @@ function patch(record: Record<string, any>, key: string, value: any) {
   record[key] = value
 }
 
+type InlineEntry = {
+  node: types.JSXElement,
+  component: Component,
+  properties: Record<string, types.Node>
+}
+
 export class BindingBuilder {
   private static _inlines = new WeakMap<Component, BindingDOM>()
 
-  private static inline(component: Component, toolkit: Toolkit, properties: Record<string, types.Node>): BindingDOM {
+  private static inline(toolkit: Toolkit, { component, properties }: InlineEntry): BindingDOM {
     const body = types.cloneNode(component.body, true)
 
     const name = component.parameters[0]?.name
 
     if (name !== undefined) {
-      return this.build(replace_properties(body, properties, name!), toolkit)
+      const result = replace_properties(body, properties, name!)
+
+      return this.build(result as types.JSXElement, toolkit)
     }
 
     return this.build(body, toolkit)
@@ -46,17 +54,29 @@ export class BindingBuilder {
       const url = build_url(path, tag)
 
       if (toolkit.recursion.is_recursive(url)) {
-        const inline = this._inlines.get(component)
+        const inline = this._inlines.get(component)!
 
-        if (inline !== undefined) {
-          inline.properties.recursive = inline
-          return inline
+        inline.properties.recursive = inline
+
+        return inline
+      }
+
+      const placeholder = {
+        children: [],
+        properties: {
+          tag
         }
       }
 
-      const result = this.inline(component, toolkit, raw_properties)
+      this._inlines.set(component, placeholder)
 
-      this._inlines.set(component, result)
+      const result = this.inline(toolkit, {
+        node,
+        component,
+        properties: raw_properties
+      })
+
+      Object.assign(placeholder, result)
 
       return result
     }
