@@ -6,9 +6,13 @@ import path from 'path'
 import { pathToFileURL } from 'url'
 
 const plugin_path = path.resolve('./dist/vite.es.js')
-const has_built_plugin = existsSync(plugin_path)
+const vms_path = path.resolve('./dist/vms.es.js')
+const has_built_plugin = existsSync(plugin_path) && existsSync(vms_path)
+const imports = has_built_plugin
+  ? [(await import(pathToFileURL(plugin_path).href)), (await import(pathToFileURL(vms_path).href))]
+  : []
 const plugins = has_built_plugin
-  ? [(await import(pathToFileURL(plugin_path).href)).stillflow_plugin()]
+  ? [imports[0].stillflow_plugin({ targets: { 0: imports[1].dom } })]
   : []
 
 export default defineConfig(({ mode }) => {
@@ -25,7 +29,8 @@ export default defineConfig(({ mode }) => {
           // Точка входа твоей библиотеки
           entry: {
             index: resolve(import.meta.dirname, 'src/index.ts'),
-            vite: resolve(import.meta.dirname, 'src/vite.plugin.ts')
+            vite: resolve(import.meta.dirname, 'src/vite.plugin.ts'),
+            vms: resolve(import.meta.dirname, 'src/targets.index.ts')
           },
 
           // Имя глобальной переменной (нужно только для UMD/IIFE)

@@ -1,6 +1,6 @@
 import { collections, runtime } from "stillflow.engine"
 
-const { jsxdom, $ } = runtime
+const { dom, $ } = runtime
 
 type CategoryData = {
   title: string
@@ -15,26 +15,26 @@ type GroupData = {
 // Компонент A: рендерит списки групп (Компонент B)
 function Category() {
   return (
-    <jsxdom.div className="category">
-      <jsxdom.strong>{(context: CategoryData) => context.title}</jsxdom.strong>
-      <jsxdom.div
+    <dom.div className="category">
+      <dom.strong>{(context: CategoryData) => context.title}</dom.strong>
+      <dom.div
         sf: for={(context: CategoryData) => context.groups}
         sf: each={() => <SubGroup />}
       />
-    </jsxdom.div>
+    </dom.div>
   )
 }
 
 // Компонент B: замыкает цикл, снова рендеря Компонент A
 function SubGroup() {
   return (
-    <jsxdom.div className="group" style: marginLeft="16px">
-      <jsxdom.em>{(context: GroupData) => context.label}</jsxdom.em>
-      <jsxdom.div
+    <dom.div className="group" style: marginLeft="16px">
+      <dom.em>{(context: GroupData) => context.label}</dom.em>
+      <dom.div
         sf: for={(context: GroupData) => context.subcategories}
         sf: each={() => <Category />}
       />
-    </jsxdom.div>
+    </dom.div>
   )
 }
 
@@ -79,7 +79,7 @@ root_category.groups.add(group_b1)
 
 // Компиляция и запуск
 const Fabric = $(<Category />)
-const { app, root } = Fabric()
+const { app, root } = Fabric
 
 document.body.appendChild(root)
 app(root, root_category)

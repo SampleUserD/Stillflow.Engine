@@ -1,9 +1,10 @@
-import transformer from './stillflow-vite/dom.plugin'
+import transformer from './stillflow-vite/targets.plugin'
 
 import type { Plugin } from "vite"
 import { transformAsync } from "@babel/core"
+import { Options } from '@/stillflow-vite/vm-abstract'
 
-export function stillflow_plugin(): Plugin {
+export function stillflow_plugin(options: Options): Plugin {
   return {
     name: 'vite-plugin-stillflow',
     enforce: 'pre',
@@ -22,7 +23,7 @@ export function stillflow_plugin(): Plugin {
 
       const result = await transformAsync(code, {
         filename: id,
-        plugins: [transformer({ node_module, babel, parser, path, fs })],
+        plugins: [transformer({ node_module, babel, parser, path, fs }, options)],
         parserOpts: {
           plugins: ['jsx', 'typescript']
         },

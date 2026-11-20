@@ -1,7 +1,8 @@
-import { AbstractCollection } from "./abstract/collection.js"
+import { LogicalIndex, PhysicalIndex, as_logical, as_physical } from "@/stillflow-collection/abstract/collection.index.js"
+import { GleeCollection } from "@/stillflow-collection/abstract/collection.glee.js"
 import { Fenwick } from "./utilities/fenwick-tree.js"
 
-export class FenwickCollection<T> implements AbstractCollection<T> {
+export class FenwickCollection<T> extends GleeCollection<T> {
   private static GROW = 2
   private static REMOVE_COUNT = 1
 
@@ -12,25 +13,23 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
   private _data: T[]
 
   public constructor(private _size: number = 1) {
+    super()
+
     this._data = new Array<T>()
     this._tree = new Fenwick(this._size)
   }
 
-  public at(index: number): T {
-    return this._data[index + this._shift]
+  public $to_logical(index: PhysicalIndex): LogicalIndex {
+    const removed_count = index > 0 ? this._tree.count(index - 1) : 0
+
+    return as_logical(index - removed_count)
   }
 
-  public unmap(index: number): number {
-    const removed_before = index > 0 ? this._tree.count(index + this._shift - 1) : 0
-
-    return index + this._shift - removed_before
-  }
-
-  public map(id: number): number {
+  public $to_physical(id: LogicalIndex): PhysicalIndex {
     let physical_index = 0
     let step = 1
 
-    const active_length = this._data.length
+    const active_length = this._data.length - this._shift
 
     // Находим наибольшую степень двойки <= size
     while (step * 2 < active_length) {
@@ -52,42 +51,26 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
       }
     }
 
-    return physical_index + this._shift
+    return as_physical(physical_index)
   }
 
-  public set(index: number, value: T): void {
-    this._data[index + this._shift] = value
+  public $at(id: PhysicalIndex): T {
+    return this._data[id + this._shift]
   }
 
-  public add(value: T): void {
-    const index = this._data.push(value)
-
-    if (index >= this._size) {
-      this._tree = this._tree.grow(this._size)
-      this._size *= FenwickCollection.GROW
-    }
+  public $set(id: PhysicalIndex, value: T): void {
+    this._data[id + this._shift] = value
   }
 
-  public swap(i: number, j: number): void {
-    const temporary = this.at(i)
+  public $swap(i: PhysicalIndex, j: PhysicalIndex): void {
+    const temporary = this.$at(i)
 
-    this.set(i, this.at(j))
-    this.set(j, temporary)
+    this.$set(i, this.$at(j))
+    this.$set(j, temporary)
   }
 
-  public attach(value: T[]): void {
-    this._data = this._data.concat(value)
-
-    const index = this._data.length
-
-    while (index >= this._size) {
-      this._tree = this._tree.grow(this._size)
-      this._size *= FenwickCollection.GROW
-    }
-  }
-
-  public mutate(index: number, mutator: (value: T) => void): void {
-    mutator(this.at(index))
+  public $mutate(index: PhysicalIndex, mutator: (value: T) => void): void {
+    mutator(this.$at(index))
   }
 
   public shrink(): void {
@@ -104,7 +87,7 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     this._removes.clear()
   }
 
-  public mark_cleared(): void {
+  public clear(): void {
     this._shift = this._data.length
     this._size = this._data.length + 1
 
@@ -115,28 +98,48 @@ export class FenwickCollection<T> implements AbstractCollection<T> {
     this._removes.clear()
   }
 
-  public mark_removed(index: number): void {
-    if (this._removes.has(index) === false) {
-      this._tree.add(index, FenwickCollection.REMOVE_COUNT)
-      this._removes.add(index)
+  public add(value: T): void {
+    const index = this._data.push(value)
+
+    if (index >= this._size) {
+      this._tree = this._tree.grow(this._size)
+      this._size *= FenwickCollection.GROW
     }
   }
 
-  public mark_removed_range(left: number, right: number): void {
+  public attach(value: T[]): void {
+    this._data = this._data.concat(value)
+
+    const index = this._data.length
+
+    while (index >= this._size) {
+      this._tree = this._tree.grow(this._size)
+      this._size *= FenwickCollection.GROW
+    }
+  }
+
+  public $remove(id: PhysicalIndex): void {
+    if (this._removes.has(id) === false) {
+      this._tree.add(id, FenwickCollection.REMOVE_COUNT)
+      this._removes.add(id)
+    }
+  }
+
+  public $remove_range(left: PhysicalIndex, right: PhysicalIndex): void {
     if (left > right) {
       return
     }
 
     for (let index = left; index <= right; index++) {
-      this.mark_removed(index)
+      this.$remove(index)
     }
   }
 
-  public get size(): number {
+  public get $size(): number {
     return this._data.length - this._shift - this._tree.count(this._data.length - this._shift)
   }
 
-  public get capacity(): number {
+  public get $capacity(): number {
     return this._size
   }
 }

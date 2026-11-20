@@ -1,11 +1,9 @@
-import { AbstractCollection } from "@/stillflow-collection/abstract/collection"
-
-type EventTable = Record<string, (event: Event, context: any) => void>
+import { Abstract, as_logical } from "@/stillflow-collection"
 
 export class EventDelegator {
   private _actives = new Set<string>()
   private _handlers = new Array<(event: Event, context: any) => void>()
-  private _collections = new Array<AbstractCollection<any>>()
+  private _collections = new Array<Abstract<any>>()
 
   private handle_global_event(event: Event) {
     const attribute_name = `data-sf-${event.type}`
@@ -32,9 +30,7 @@ export class EventDelegator {
           }
 
           const collection = this._collections[parseInt(listId)]
-          const context = collection.at(collection.map(index))
-
-          console.log(collection.unmap(index), collection.map(index), context.id - 1)
+          const context = collection.at(as_logical(index))
 
           this._handlers[parseInt(handlerId)](event, context)
 
@@ -51,7 +47,7 @@ export class EventDelegator {
     }
   }
 
-  public register_collection(collection: AbstractCollection<any>): number {
+  public register_collection(collection: Abstract<any>): number {
     return this._collections.push(collection) - 1
   }
 

@@ -37,6 +37,11 @@
       "import": "./dist/vite.es.js",
       "require": "./dist/vite.cjs.js",
       "types": "./dist/vite.plugin.d.ts"
+    },
+    "./vms": {
+      "import": "./dist/vms.es.js",
+      "require": "./dist/vms.cjs.js",
+      "types": "./dist/targets.index.d.ts"
     }
   },
   "files": [

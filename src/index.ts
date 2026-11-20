@@ -1,6 +1,6 @@
 import * as collections from './stillflow-collection/index.js'
 import * as core from './stillflow/index.js'
-import * as runtime from './stillflow-runtime/jsx.dom.js'
+import * as runtime from './stillflow-runtime/dom.js'
 import * as utilities from './stillflow-collection/utilities/index.js'
 
 import operators from './stillflow/operators.js'

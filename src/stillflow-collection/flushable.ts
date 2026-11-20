@@ -1,37 +1,31 @@
-import { AbstractCollection } from "./abstract/collection.js"
-import { Delta, clear_delta } from "./delta.js"
+import { Delta, clear_delta } from "./abstract/collection.delta.js"
+import { GleeCollection } from "@/stillflow-collection/abstract/collection.glee.js"
+import { Flusher } from "@/stillflow-collection/abstract/collection.flusher.js"
+import { as_logical, as_physical } from "@/stillflow-collection/index.js"
 
-export class FlushableCollection<T> implements AbstractCollection<T> {
-  private _front: Delta = {
+export class FlushableCollection<T> implements Flusher<T> {
+  private _front: Delta<T> = {
     addes: 0,
     swaps: new Map(),
-    updates: new Set(),
+    updates: new Map(),
     removes: new Set(),
     replaces: false,
     clears: false
   }
 
-  private _back: Delta = {
+  private _back: Delta<T> = {
     addes: 0,
     swaps: new Map(),
-    updates: new Set(),
+    updates: new Map(),
     removes: new Set(),
     replaces: false,
     clears: false
   }
 
-  public constructor(private _base: AbstractCollection<T>) { }
-
-  public unmap(index: number): number {
-    return this._base.unmap(index)
-  }
+  public constructor(private _base: GleeCollection<T>) { }
 
   public at(index: number): T {
-    return this._base.at(index)
-  }
-
-  public map(id: number): number {
-    return this._base.map(id)
+    return this._base.at(as_logical(index))
   }
 
   public add(value: T): void {
@@ -41,49 +35,59 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
   }
 
   public set(index: number, value: T): void {
-    this._front.updates.add(index)
+    this._base.set(as_logical(index), value)
 
-    this._base.set(index, value)
+    this.touch(index)
   }
 
   public swap(i: number, j: number): void {
-    this._front.swaps.set(i, j)
-    this._base.swap(i, j)
+    this._base.swap(as_logical(i), as_logical(j))
+
+    this._front.swaps.set(this._base.$to_logical(as_physical(i)), this._base.$to_logical(as_physical(j)))
   }
 
   public attach(value: T[]): void {
     this._front.addes += value.length
+
     this._base.attach(value)
   }
 
   public mutate(index: number, mutator: (value: T) => void): void {
-    this._front.updates.add(index)
-    this._base.mutate(index, mutator)
+    this._base.mutate(as_logical(index), mutator)
+
+    this.touch(index)
   }
 
   public shrink(): void {
     this._base.shrink()
   }
 
-  public mark_cleared(): void {
+  public clear(): void {
     this._front.clears = true
-    this._base.mark_cleared()
+    this._base.clear()
   }
 
-  public mark_removed(index: number): void {
-    this._front.removes.add(index)
-    this._base.mark_removed(index)
+  public touch(id: number): void {
+    const index = this._base.$to_logical(as_physical(id))
+
+    this._front.updates.set(index, this._base.at(index))
   }
 
-  public mark_removed_range(left: number, right: number): void {
-    for (let index = left; index <= right; index++) {
-      this._front.removes.add(index)
+  public remove(id: number): void {
+    const index = this._base.remove(as_physical(id))
+
+    this._front.removes.add(this._base.$to_logical(as_physical(id)))
+
+    return index
+  }
+
+  public remove_range(left: number, right: number): void {
+    for (let id = left; id <= right; id++) {
+      this.remove(id)
     }
-
-    this._base.mark_removed_range(left, right)
   }
 
-  public flush(): Delta {
+  public flush(): Delta<T> {
     this._front.replaces = (this._front.addes > 0) && (this._front.clears)
     this._front.clears = (this._front.addes <= 0) && (this._front.clears)
     this._front.addes = this._front.replaces ? 0 : this._front.addes
@@ -99,9 +103,5 @@ export class FlushableCollection<T> implements AbstractCollection<T> {
 
   public get size(): number {
     return this._base.size
-  }
-
-  public get capacity(): number {
-    return this._base.capacity
   }
 }

@@ -13,7 +13,7 @@ type TodoState = {
   items: collections.Flushable<TodoItem>
 }
 
-const { jsxdom, $ } = runtime
+const { dom, $ } = runtime
 
 const state = new core.State()
 const stillflow = new core.Stillflow<AppState>(state)
@@ -42,27 +42,27 @@ function add() {
 
 function TodoItem() {
   return (
-    <jsxdom.div>
+    <dom.div>
       {(context: TodoItem) => context.label}
-    </jsxdom.div>
+    </dom.div>
   )
 }
 
 function App() {
   return (
-    <jsxdom.div>
-      <jsxdom.input sf: value={(context: TodoState) => context.input} on: change={change} />
-      <jsxdom.button on: click={add}>
+    <dom.div>
+      <dom.input sf: value={(context: TodoState) => context.input} on: change={change} />
+      <dom.button on: click={add}>
         Add
-      </jsxdom.button>
-      <jsxdom.div sf: for={(context: TodoState) => context.items} sf: each={() => <TodoItem />} />
-    </jsxdom.div>
+      </dom.button>
+      <dom.div sf: for={(context: TodoState) => context.items} sf: each={() => <TodoItem />} />
+    </dom.div>
   )
 }
 
 const Fabric = $(<App />)
 
-const { app: update, root } = Fabric()
+const { app: update, root } = Fabric
 
 stillflow.on(() => update(root, instance))
 
