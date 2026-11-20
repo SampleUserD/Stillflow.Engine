@@ -16,7 +16,11 @@ export class Batcher {
     this._commiting = true
 
     this._strategy(() => {
-      for (const task of this._tasks) {
+      const tasks = [...this._tasks]
+
+      this._tasks.clear()
+
+      for (const task of tasks) {
         task()
       }
 
