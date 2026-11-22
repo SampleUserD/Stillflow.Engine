@@ -1,4 +1,10 @@
-import { Toolkit } from "@/stillflow-vite/vm-abstract"
-import { Diagnostics } from "@/stillflow-vite/vm-compiler/vmc.diagnostics"
+export type VMCError = {
+  message: string,
+  position: [number, number]
+}
 
-export type Transform<I, O> = (description: I, context: Toolkit, diagnostics: Diagnostics[]) => O
+export type VMCResult<I, O, COut> =
+  | { ok: true, value: O, rest: I, ctx: COut }
+  | { ok: false, error: VMCError }
+
+export type VMCTransform<I, O, CIn, COut> = (input: I, ctx: CIn) => VMCResult<I, O, COut>

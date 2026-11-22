@@ -54,6 +54,6 @@ export abstract class GleeCollection<T> implements PhysicalCollection<T>, Logica
   public abstract get $size(): number
 
   public get size(): number {
-    return this.$to_physical(as_logical(this.$size))
+    return this.$size
   }
 }

@@ -56,9 +56,11 @@ export class BindingBuilder {
       if (toolkit.recursion.is_recursive(url)) {
         const inline = this._inlines.get(component)!
 
-        inline.properties.recursive = inline
+        if (inline !== undefined) {
+          inline.properties.recursive = inline
 
-        return inline
+          return inline
+        }
       }
 
       const placeholder = {
