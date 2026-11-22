@@ -188,7 +188,7 @@ export const map_error =
 
 export const local =
   <I, O, CIn, CExt, COut>
-    (w: (ctx: CIn) => CIn & CExt, t: VMCTransform<I, O, CIn & CExt, COut>): VMCTransform<I, O, Cin, CIn> => {
+    (w: (ctx: CIn) => CIn & CExt, t: VMCTransform<I, O, CIn & CExt, COut>): VMCTransform<I, O, CIn, CIn> => {
     return (input, ctx) => {
       const r = t(input, w(ctx))
 
