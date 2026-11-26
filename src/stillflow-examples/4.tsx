@@ -64,7 +64,7 @@ const Fabric = $(<App />)
 
 const { app: update, root } = Fabric
 
-stillflow.on(() => update(root, instance))
+stillflow.on(() => update(instance))
 
 document.body.appendChild(root)
 

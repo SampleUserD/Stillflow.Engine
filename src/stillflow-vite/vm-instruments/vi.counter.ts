@@ -6,6 +6,10 @@ export class SequentalCounter implements Counter {
 
   public constructor(private _prefix: string) { }
 
+  public get(): number {
+    return this._counter
+  }
+
   public next(): number {
     return this._counter++
   }

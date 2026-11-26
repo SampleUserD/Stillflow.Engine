@@ -1,18 +1,21 @@
 import type { types } from '@babel/core'
 import * as vm from '@/stillflow-vite/vm-abstract'
 
-export class Assembler {
-  public constructor(private _targets: vm.Options['targets'], private _toolkit: vm.Toolkit, private _context: vm.Compiled) { }
+export class Assembler<T> {
+  public constructor(private _targets: vm.Options['targets'], private _toolkit: vm.Toolkit, private _context: T) { }
 
   public assemble(bytecode: ArrayLike<number>): vm.Chunk {
-    const END = 0
-
     const module_statements: types.Statement[] = []
     const body_statements: types.Statement[] = []
 
     let offset = 0
 
-    while (bytecode[offset] !== END) {
+    const toolkit = {
+      toolkit: this._toolkit,
+      assembler: this
+    }
+
+    while (bytecode[offset] !== undefined) {
       const size = bytecode[offset]
       const opcode = bytecode[offset + 1]
 
@@ -21,7 +24,11 @@ export class Assembler {
 
       const vm_target = this._targets[target]
 
-      const chunk = vm_target.emitters[local](bytecode, offset, this._toolkit, this._context)
+      if (local in vm_target.emitters === false) {
+        throw new Error(`There is not opcode ${local} in ${target} target`)
+      }
+
+      const chunk = vm_target.emitters[local](bytecode, offset, this._context, toolkit)
 
       module_statements.push(...chunk.module)
       body_statements.push(...chunk.body)

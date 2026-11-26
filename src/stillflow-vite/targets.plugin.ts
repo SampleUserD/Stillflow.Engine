@@ -1,6 +1,6 @@
 import { Options, Toolkit } from "@/stillflow-vite/vm-abstract"
 import { CORE_TARGET_ID } from "@/stillflow-vite/vm-abstract/vm.instruction"
-import { Scoper, SequentalCounterFactory } from "@/stillflow-vite/vm-instruments"
+import { SequentalCounterFactory } from "@/stillflow-vite/vm-instruments"
 import { collect_components } from "@/stillflow-vite/vm-jsx-helpers/collect-components"
 import { collect_imports } from "@/stillflow-vite/vm-jsx-helpers/collect-imports"
 import { find_component } from "@/stillflow-vite/vm-jsx-helpers/find-component"
@@ -116,13 +116,8 @@ export default function StillflowTargets({ node_module, path, babel, fs, parser 
                 imports
               },
               target: CORE_TARGET_ID,
-              recursion: null as Scoper,
-              counters: null as SequentalCounterFactory,
-              stack: new Set()
+              counters: new SequentalCounterFactory(),
             }
-
-            toolkit.counters = new SequentalCounterFactory()
-            toolkit.recursion = new Scoper(toolkit)
 
             for (const jsx_path of jsx_elements.reverse()) {
               try {

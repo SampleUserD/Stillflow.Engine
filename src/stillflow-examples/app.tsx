@@ -245,5 +245,5 @@ const { app, root } = Fabric
 
 document.body.appendChild(root)
 
-controller.core.on(() => app(root, {}))
+controller.core.on(() => app({}))
 controller.core.commit()

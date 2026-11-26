@@ -14,12 +14,12 @@ type TailOut<Tail extends Any[], O, CO, A extends any[] = []> =
   : never
 
 type SequenceOf<F extends Any[]> =
-  F extends [VMCTransform<infer I, infer O1, any, infer CO1>, ...infer Rest]
+  F extends [VMCTransform<infer I, infer O1, infer CI1, infer CO1>, ...infer Rest]
   ? Rest extends Any[]
   ? Rest extends []
-  ? VMCResult<I, [O1], CO1>
+  ? VMCTransform<I, [O1], CI1, CO1>
   : TailOut<Rest, O1, CO1, [O1]> extends { out: infer Os, ctx: infer CoF }
-  ? VMCResult<I, Os, CoF>
+  ? VMCTransform<I, Os, CI1, CoF>
   : never
   : never
   : never
@@ -72,6 +72,26 @@ export const many = <I, A, C>(f: VMCTransform<I, A, C, C>): VMCTransform<I, A[],
   }
 
   return { ok: true, value: out, rest: current, ctx }
+}
+
+export const iterate = <I, A, C>(f: VMCTransform<I, A, C, C>): VMCTransform<I[], A[], C, C> => (input, ctx) => {
+  const out: A[] = []
+
+  let current: C = ctx
+
+  for (let index = 0; index < input.length; index++) {
+    const r = f(input[index], current)
+
+    if (r.ok === false) {
+      return { ok: true, value: out, rest: input, ctx }
+    }
+
+    current = r.ctx
+
+    out.push(r.value)
+  }
+
+  return { ok: true, value: out, rest: input, ctx: current }
 }
 
 export const sequence = <F extends Any[]>(...fs: F & Valid<F>): SequenceOf<F> => {
@@ -174,7 +194,7 @@ export const pure = <I, O, C>(o: O): VMCTransform<I, O, C, C> => (input, ctx) =>
 
 export const map_error =
   <I, A, CIn, COut>
-    (t: VMCTransform<I, A, CIn, COut>, f: (a: VMCError) => VMCError): VMCTransform<I, A, CIn, COut> => {
+    (t: VMCTransform<I, A, CIn, COut>, f: (a: VMCError[]) => VMCError[]): VMCTransform<I, A, CIn, COut> => {
     return (input, ctx) => {
       const r = t(input, ctx)
 
@@ -188,7 +208,7 @@ export const map_error =
 
 export const local =
   <I, O, CIn, CExt, COut>
-    (w: (ctx: CIn) => CIn & CExt, t: VMCTransform<I, O, CIn & CExt, COut>): VMCTransform<I, O, CIn, CIn> => {
+    (w: (ctx: CIn) => CExt, t: VMCTransform<I, O, CExt, COut>): VMCTransform<I, O, CIn, CIn> => {
     return (input, ctx) => {
       const r = t(input, w(ctx))
 

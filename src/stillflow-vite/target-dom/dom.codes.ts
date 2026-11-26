@@ -1,7 +1,10 @@
 export const enum CodesDOM {
-  IF = 0,
-  FOR = 1,
-  TEXT = 2,
-  EVENT = 3,
-  PROPERTY = 4
+  SET_STATIC_TEXT = 10,
+  SET_DYNAMIC_TEXT = 20,
+  SET_STATIC_EVENT = 30,
+  SET_LIST_EVENT = 40,
+  SET_PROPERTY = 50,
+  SET_ATTRIBUTE = 60,
+  CREATE_ELEMENT = 70,
+  APPEND = 80
 }

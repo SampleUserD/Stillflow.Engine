@@ -40,7 +40,7 @@ export type JSXDOMRegistry = {
 }
 
 export type EntryPoint<V> = {
-  app: (root: HTMLElement, context: V) => void,
+  app: (context: V) => void,
   root: HTMLElement
 }
 

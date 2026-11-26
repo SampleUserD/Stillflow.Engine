@@ -1,17 +1,22 @@
 import { LocalOpcode } from "@/stillflow-vite/vm-abstract/vm.instruction"
-import { VMCompilerResult } from "@/stillflow-vite/vm-abstract/vm.results"
 import type { VMToolkit } from "@/stillflow-vite/vm-abstract/vm.toolkit"
+import type { Assembler } from "@/stillflow-vite/vm-instruments"
 import type { types } from "@babel/core"
 
 export interface VMChunk {
   module: types.Statement[],
-  body: types.Statement[]
+  body: types.Statement[],
 }
 
-export type VMOpcodeEmitter = (bytecode: ArrayLike<number>, offset: number, toolkit: VMToolkit, context: VMCompilerResult) => VMChunk
+export interface VMEmitterToolkit<T> {
+  toolkit: VMToolkit,
+  assembler: Assembler<T>
+}
 
-export interface VMTarget {
-  emitters: Readonly<Record<LocalOpcode, VMOpcodeEmitter>>
+export type VMOpcodeEmitter<T> = (bytecode: ArrayLike<number>, offset: number, context: T, toolkit: VMEmitterToolkit<T>) => VMChunk
+
+export interface VMTarget<T = unknown> {
+  emitters: Readonly<Record<LocalOpcode, VMOpcodeEmitter<T>>>
 
   main(descriptor: types.JSXElement, toolkit: VMToolkit, others: Record<number, VMTarget>): VMChunk
 }

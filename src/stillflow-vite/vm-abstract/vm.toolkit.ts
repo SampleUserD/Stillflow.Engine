@@ -2,6 +2,7 @@ import { TargetId } from "@/stillflow-vite/vm-abstract/vm.instruction"
 import type { NodePath, Scope, types } from "@babel/core"
 
 export interface VMCounter {
+  get(): number
   next(): number
   identifier(): types.Identifier
 }
@@ -15,16 +16,6 @@ export interface VMCounterFactory {
   create(prefix: string): VMCounter
 
   clear(): void
-}
-
-export interface VMRecursion {
-  is_recursive(path: string): boolean
-
-  push(path: string): void
-
-  pop(path: string): void
-
-  scope(path: string, site: (path: string) => void): void
 }
 
 export interface VMComponentInformation {
@@ -48,9 +39,5 @@ export interface VMToolkit {
     imports: Map<string, VMImportInformation>
   }
   readonly target: TargetId
-
-  recursion: VMRecursion
-  counters: VMCounterFactory
-
-  readonly stack: Set<string>
+  readonly counters: VMCounterFactory
 }

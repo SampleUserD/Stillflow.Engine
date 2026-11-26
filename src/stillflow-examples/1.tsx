@@ -82,4 +82,4 @@ const Fabric = $(<Category />)
 const { app, root } = Fabric
 
 document.body.appendChild(root)
-app(root, root_category)
+app(root_category)

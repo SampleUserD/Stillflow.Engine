@@ -1,164 +1,65 @@
-import { collect_compile_map, collect_transform_map } from "@/stillflow-vite/target-dom/dom-collectors/collect-maps"
-import { Chunk, Target } from "@/stillflow-vite/vm-abstract"
+import type { Target } from "@/stillflow-vite/vm-abstract"
 
-import { BindingDOM } from "@/stillflow-vite/target-dom/dom.binding"
+import type { CodegenContext } from "@/stillflow-vite/target-dom/dom.codegen"
 
-import { Compiler, CompilerResult } from "@/stillflow-vite/target-dom/dom.compiler"
-import { markup } from "@/stillflow-vite/target-dom/dom.markup"
-
-import { types } from "@babel/core"
+import { build, create_context } from "@/stillflow-vite/target-dom/dom.build"
+import { compile } from "@/stillflow-vite/target-dom/dom.compile"
+import { emitters } from "@/stillflow-vite/target-dom/dom.codegen"
 import { Assembler } from "@/stillflow-vite/vm-instruments"
-import { BindingBuilder } from "@/stillflow-vite/target-dom/dom.build-binding"
-import { emitters } from "@/stillflow-vite/target-dom/dom.emitters"
+import { generate, types } from "@babel/core"
 
 export const target_dom: Target = {
   emitters,
   main(element, toolkit, others) {
-    const descriptor = BindingBuilder.build(element, toolkit)
-    const compiled = new Compiler(toolkit).compile(descriptor)
-    const assembler = new Assembler(others, toolkit, compiled)
+    const built_element = build(element, create_context(toolkit.context.components))
 
-    const templates: types.Statement[] = []
-    const root_id = compiled.compile_map.get(compiled)!
-
-    templates.push(
-      types.variableDeclaration('const', [
-        types.variableDeclarator(
-          types.identifier('set_data'),
-          types.memberExpression(
-            types.callExpression(
-              types.memberExpression(
-                types.identifier('Object'),
-                types.identifier('getOwnPropertyDescriptor')
-              ),
-              [
-                types.memberExpression(
-                  types.identifier('CharacterData'),
-                  types.identifier('prototype')
-                ),
-                types.stringLiteral('data')
-              ]
-            ),
-            types.identifier('set')
-          )
-        ),
-        types.variableDeclarator(
-          types.identifier('set_text'),
-          types.memberExpression(
-            types.callExpression(
-              types.memberExpression(
-                types.identifier('Object'),
-                types.identifier('getOwnPropertyDescriptor')
-              ),
-              [
-                types.memberExpression(
-                  types.identifier('Node'),
-                  types.identifier('prototype')
-                ),
-                types.stringLiteral('textContent')
-              ]
-            ),
-            types.identifier('set')
-          )
-        ),
-        types.variableDeclarator(
-          types.identifier('replace_children'),
-          types.memberExpression(
-            types.memberExpression(
-              types.identifier('Element'),
-              types.identifier('prototype')
-            ),
-            types.identifier('replaceChildren')
-          )
-        ),
-      ])
-    )
-
-    for (const [transformation, index] of compiled.transform_map) {
-      templates.push(...transformation.module)
-      templates.push(
-        types.variableDeclaration('const', [
-          types.variableDeclarator(
-            types.identifier(`transform_${index}`),
-            types.functionExpression(
-              null,
-              transformation.parameters,
-              types.blockStatement([
-                ...transformation.body,
-                types.returnStatement(
-                  transformation.return_expression
-                )
-              ])
-            )
-          )
-        ])
-      )
-      templates.push(
-        types.variableDeclaration('const', [
-          types.variableDeclarator(
-            types.identifier(`root_${index}`),
-            types.callExpression(
-              types.identifier(`transform_${index}`),
-              [
-                types.callExpression(
-                  types.memberExpression(
-                    types.identifier('document'),
-                    types.identifier('createDocumentFragment')
-                  ),
-                  []
-                )
-              ]
-            )
-          )
-        ])
-      )
+    if (built_element.ok === false) {
+      throw new Error(`IR generation error: ${built_element.error[0].message} at line ${built_element.error[0].position[0]}, column ${built_element.error[0].position[1]}`)
     }
 
-    for (const [compilation, index] of compiled.compile_map) {
-      const chunk = assembler.assemble(compilation.bytecode)
+    const compiled_element = compile(built_element.value)
 
-      templates.push(
-        ...chunk.module,
-        types.functionDeclaration(
-          types.identifier(`vm_${index}`),
-          [types.identifier('root'), types.identifier('context')],
-          types.blockStatement([
-            ...compilation.markup.body,
-            ...chunk.body
-          ])
-        )
-      )
+    if (compiled_element.ok === false) {
+      throw new Error(`Compilation error: ${compiled_element.error[0].message} at line ${compiled_element.error[0].position[0]}, column ${compiled_element.error[0].position[1]}`)
     }
 
-    templates.push(
-      types.variableDeclaration('const', [
-        types.variableDeclarator(types.identifier('app'), types.identifier(`vm_${root_id}`)),
-        types.variableDeclarator(types.identifier('root'), types.identifier(`root_${root_id}`))
-      ])
-    )
-
-    templates.push(
-      types.returnStatement(
-        types.objectExpression([
-          types.objectProperty(types.identifier('app'), types.identifier('app')),
-          types.objectProperty(types.identifier('root'), types.identifier('root'))
-        ])
-      )
-    )
+    const assembler = new Assembler<CodegenContext>(others, toolkit, {
+      sf: compiled_element.value.context,
+      chunks: compiled_element.value.chunks,
+      scopes: [],
+      deferred: [],
+      symbols: []
+    })
+    const assembled_element = assembler.assemble(compiled_element.value.code)
 
     return {
       module: [
         types.importDeclaration(
           [
             types.importSpecifier(
-              types.identifier('DELEGATOR'),
-              types.identifier('DELEGATOR')
-            ),
+              types.identifier("DELEGATOR"),
+              types.identifier("DELEGATOR")
+            )
           ],
-          types.stringLiteral('stillflow.engine')
-        )
+          types.stringLiteral("stillflow.engine")
+        ),
+        ...assembled_element.module
       ],
-      body: templates
+      body: [
+        ...assembled_element.body,
+        types.returnStatement(
+          types.objectExpression([
+            types.objectProperty(
+              types.identifier('root'),
+              types.identifier('__s0')
+            ),
+            types.objectProperty(
+              types.identifier('app'),
+              types.identifier('__u0')
+            )
+          ])
+        )
+      ]
     }
   }
 }
