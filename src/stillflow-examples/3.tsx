@@ -25,4 +25,4 @@ collection.add({ id: 1, label: "Hello 1!" })
 collection.add({ id: 2, label: "Hello 2!" })
 collection.add({ id: 3, label: "Hello 3!" })
 
-app(root, { items: collection })
+app({ items: collection })

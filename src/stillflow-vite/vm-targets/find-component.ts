@@ -1,5 +1,5 @@
-import { Component } from "@/stillflow-vite/vm-abstract"
-import { get_return_argument } from "@/stillflow-vite/vm-jsx-helpers/get-return-argument"
+import { Component } from "@/stillflow-vite/vm-abstract/vm.target"
+import { get_return_argument } from "@/stillflow-vite/vm-targets/collect-components"
 import { types } from "@babel/core"
 
 export function find_component(ast: types.File, name: string, filename: string): Component | null {

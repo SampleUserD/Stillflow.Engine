@@ -1,6 +1,8 @@
 import { collections, runtime } from "stillflow.engine"
 
-const { dom, $ } = runtime
+const { dom, $, $it, $index, $parent } = runtime
+
+const { div, em, strong } = dom
 
 type CategoryData = {
   title: string
@@ -13,28 +15,30 @@ type GroupData = {
 }
 
 // Компонент A: рендерит списки групп (Компонент B)
-function Category() {
+function Category(props: { it: CategoryData }) {
   return (
-    <dom.div className="category">
-      <dom.strong>{(context: CategoryData) => context.title}</dom.strong>
-      <dom.div
-        sf: for={(context: CategoryData) => context.groups}
-        sf: each={() => <SubGroup />}
-      />
-    </dom.div>
+    <div className="category">
+      <strong>{props.it.title}</strong>
+      <div>
+        <for select={props.it.groups || createFlushable()}>
+          <SubGroup it={$it} />
+        </for>
+      </div>
+    </div>
   )
 }
 
 // Компонент B: замыкает цикл, снова рендеря Компонент A
-function SubGroup() {
+function SubGroup(props: { it: GroupData }) {
   return (
-    <dom.div className="group" style: marginLeft="16px">
-      <dom.em>{(context: GroupData) => context.label}</dom.em>
-      <dom.div
-        sf: for={(context: GroupData) => context.subcategories}
-        sf: each={() => <Category />}
-      />
-    </dom.div>
+    <div className="group" style="margin-left: 16px">
+      <em>{props.it.label}</em>
+      <div>
+        <for select={props.it.subcategories || createFlushable()}>
+          <Category it={$it} />
+        </for>
+      </div>
+    </div>
   )
 }
 
@@ -78,8 +82,8 @@ group_b1.subcategories.add(nested_category_a2)
 root_category.groups.add(group_b1)
 
 // Компиляция и запуск
-const Fabric = $(<Category />)
-const { app, root } = Fabric
+const Fabric = $(<Category it={root_category} />)
+const { app, root } = Fabric(root_category)
 
 document.body.appendChild(root)
-app(root, root_category)
+app(root_category)

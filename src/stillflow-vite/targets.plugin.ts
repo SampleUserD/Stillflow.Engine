@@ -1,10 +1,9 @@
-import { Options, Toolkit } from "@/stillflow-vite/vm-abstract"
+import { Options } from "@/stillflow-vite/vm-abstract"
 import { CORE_TARGET_ID } from "@/stillflow-vite/vm-abstract/vm.instruction"
-import { Scoper, SequentalCounterFactory } from "@/stillflow-vite/vm-instruments"
-import { collect_components } from "@/stillflow-vite/vm-jsx-helpers/collect-components"
-import { collect_imports } from "@/stillflow-vite/vm-jsx-helpers/collect-imports"
-import { find_component } from "@/stillflow-vite/vm-jsx-helpers/find-component"
 import { NodePath, PluginObject, types } from "@babel/core"
+import { collect_components } from "@/stillflow-vite/vm-targets/collect-components"
+import { collect_imports } from "@/stillflow-vite/vm-targets/collect-imports"
+import { find_component } from "@/stillflow-vite/vm-targets/find-component"
 
 export default function StillflowTargets({ node_module, path, babel, fs, parser }, options: Options) {
   const { existsSync, readFileSync, statSync } = fs
@@ -109,44 +108,26 @@ export default function StillflowTargets({ node_module, path, babel, fs, parser 
               }
             })
 
-            const toolkit: Toolkit = {
-              context: {
-                components,
-                elements: jsx_elements,
-                imports
-              },
-              target: CORE_TARGET_ID,
-              recursion: null as Scoper,
-              counters: null as SequentalCounterFactory,
-              stack: new Set()
-            }
-
-            toolkit.counters = new SequentalCounterFactory()
-            toolkit.recursion = new Scoper(toolkit)
-
             for (const jsx_path of jsx_elements.reverse()) {
               try {
                 const call_path = jsx_path.parentPath
-                const program = options.targets[CORE_TARGET_ID].main(jsx_path.node, toolkit, options.targets)
+                const program = options.targets[CORE_TARGET_ID].main(jsx_path.node, components)
 
                 if (!types.isCallExpression(call_path.node)) {
                   continue
                 }
 
-                const iife = types.callExpression(
-                  types.functionExpression(
-                    null,
-                    [],
-                    types.blockStatement(program.body)
-                  ),
-                  []
+                const functional_module = types.functionExpression(
+                  null,
+                  [types.identifier('$it')],
+                  types.blockStatement(program.body)
                 )
 
                 if (program.module.length > 0) {
                   program_path.unshiftContainer('body', program.module)
                 }
 
-                call_path.replaceWith(iife)
+                call_path.replaceWith(functional_module)
               } catch (error) {
                 console.error(`[stillflow] Failed to compile JSX in ${state.filename}: `, error)
               }

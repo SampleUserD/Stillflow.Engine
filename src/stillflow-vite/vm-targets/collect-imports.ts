@@ -1,5 +1,6 @@
-import { Import } from "@/stillflow-vite/vm-abstract"
 import { NodePath, types } from "@babel/core"
+
+import { Import } from "@/stillflow-vite/vm-abstract/vm.target"
 
 export function collect_imports(program_path: NodePath<types.Program>): Map<string, Import> {
   const imports = new Map<string, Import>()

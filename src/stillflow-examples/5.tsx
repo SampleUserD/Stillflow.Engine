@@ -2,21 +2,23 @@ import { runtime } from "stillflow.engine"
 
 const { dom, $ } = runtime
 
-function TreeNode(props: { depth: number }) {
-  if (props.depth >= 10) {
-    return <dom.div>Hello!</dom.div>
-  }
+const { div, span } = dom
 
+function TreeNode(props: { depth: number }) {
   return (
-    <dom.div style: marginLeft={`${props.depth * 2}px`}>
-      <dom.span>Hello ${props.depth}</dom.span>
+    <div>
+      <span>Hello {props.depth}</span>
       <TreeNode depth={props.depth + 1} />
-    </dom.div>
+    </div>
   )
 }
 
 let depth = 0
 
-const { app, root } = $(<TreeNode depth={depth} />)
+const { app, root } = $(
+  <div>
+    <TreeNode depth={depth + 5} />
+  </div>
+)({})
 
 document.body.appendChild(root)

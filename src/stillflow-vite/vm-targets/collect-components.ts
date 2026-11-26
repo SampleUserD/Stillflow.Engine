@@ -1,6 +1,31 @@
-import { Component } from "@/stillflow-vite/vm-abstract"
-import { get_return_argument } from "@/stillflow-vite/vm-jsx-helpers/get-return-argument"
-import { NodePath, PluginPass, types } from "@babel/core"
+import { NodePath, PluginPass, Scope, types } from "@babel/core"
+
+import { Component } from "@/stillflow-vite/vm-abstract/vm.target"
+
+function get_function_body(node: types.ArrowFunctionExpression | types.FunctionDeclaration | types.FunctionExpression): types.Statement[] {
+  const body = node.body
+
+  if (types.isBlockStatement(body)) {
+    return body.body
+  }
+
+  return [types.toBlock(body)]
+}
+
+export function get_return_argument(node: types.FunctionExpression | types.ArrowFunctionExpression | types.FunctionDeclaration): types.Node {
+  const body = get_function_body(node)
+  const statement = body.find(statement => types.isReturnStatement(statement)) as types.ReturnStatement
+
+  if (!statement || !statement.argument) {
+    if (types.isArrowFunctionExpression(node)) {
+      return node.body
+    }
+
+    return null
+  }
+
+  return statement.argument
+}
 
 export function collect_components(program_path: NodePath<types.Program>, state: PluginPass): Map<string, Component> {
   const components = new Map<string, Component>()

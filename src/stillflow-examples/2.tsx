@@ -37,4 +37,4 @@ const { app, root } = Fabric
 
 document.body.appendChild(root)
 
-app(root, root_item)
+app(root_item)

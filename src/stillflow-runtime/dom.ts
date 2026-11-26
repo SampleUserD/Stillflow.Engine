@@ -39,15 +39,23 @@ export type JSXDOMRegistry = {
   [K in keyof HTMLElementTagNameMap]: <V>(properties: Partial<JSXElementProperties<V, K>>) => any
 }
 
-export type EntryPoint<V> = {
-  app: (root: HTMLElement, context: V) => void,
+export type EntryPoint<V> = (context: V) => ({
+  app: (context: V) => void,
   root: HTMLElement
-}
+})
 
 export const dom = Object.create(null) as JSXDOMRegistry
 export function $<V>(_: any): EntryPoint<V> {
-  return {
-    app: () => { },
-    root: null
+  return () => {
+    return {
+      app: () => { },
+      root: null
+    }
   }
 }
+
+export const $parent: Element = {} as Element
+
+export const $it: any = {}
+
+export const $index: number = 0

@@ -1,9 +1,9 @@
-import { Abstract, as_logical } from "@/stillflow-collection"
+import { Flushable } from "@/stillflow-collection"
 
 export class EventDelegator {
   private _actives = new Set<string>()
   private _handlers = new Array<(event: Event, context: any) => void>()
-  private _collections = new Array<Abstract<any>>()
+  private _collections = new Array<Flushable<any>>()
 
   private handle_global_event(event: Event) {
     const attribute_name = `data-sf-${event.type}`
@@ -30,7 +30,7 @@ export class EventDelegator {
           }
 
           const collection = this._collections[parseInt(listId)]
-          const context = collection.at(as_logical(index))
+          const context = collection.at(index)
 
           this._handlers[parseInt(handlerId)](event, context)
 
@@ -47,7 +47,7 @@ export class EventDelegator {
     }
   }
 
-  public register_collection(collection: Abstract<any>): number {
+  public register_collection(collection: Flushable<any>): number {
     return this._collections.push(collection) - 1
   }
 
