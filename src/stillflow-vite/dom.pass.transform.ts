@@ -1,7 +1,7 @@
 import { Fabric } from "@/stillflow-vite/vm-compiler/fabric"
 import { ExpressionNode, ForNode, StillflowNode, TextNode } from "@/stillflow-vite/vm-compiler/nodes"
 import { Component } from "@/stillflow-vite/vm-abstract/vm.target"
-import { types, generate } from "@babel/core"
+import { types, generate, traverse } from "@babel/core"
 
 export interface ComponentIR {
   readonly name: string
@@ -21,6 +21,11 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
   const DYNAMIC_TABLE: Record<string, string> = {
     'class': 'className'
   }
+
+  const BUILTIN_GLOBALS = new Set([
+    'String', 'Number', 'Boolean', 'Array', 'Object', 'Math', 'JSON', 'Date', 'RegExp', 'Map', 'Set',
+    'console', 'window', 'document', 'undefined', 'NaN', 'Infinity', 'isNaN', 'parseInt', 'parseFloat'
+  ])
 
   function map_dynamic_property(name: string): string {
     if (name in DYNAMIC_TABLE) {
@@ -64,14 +69,34 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
       throw new Error(`We do not support JSX empty expressions at ${expression.loc.filename} ${expression.loc.start.line}:${expression.loc.start.column}`)
     }
 
-    types.traverseFast(expression, inner => {
-      if (types.isIdentifier(inner)) {
-        if (inner.name in env) {
-          for (const ref of env[inner.name].refs) {
+    const wrapper = types.file(
+      types.program([
+        types.expressionStatement(expression)
+      ])
+    )
+
+    traverse(wrapper, {
+      Identifier(path) {
+        if (!path.isReferencedIdentifier()) {
+          return
+        }
+
+        const name = path.node.name
+
+        if (BUILTIN_GLOBALS.has(name)) {
+          return
+        }
+
+        if (path.scope.hasBinding(name)) {
+          return
+        }
+
+        if (name in env) {
+          for (const ref of env[name].refs) {
             refs.add(ref)
           }
         } else {
-          refs.add(inner.name)
+          refs.add(name)
         }
       }
     })

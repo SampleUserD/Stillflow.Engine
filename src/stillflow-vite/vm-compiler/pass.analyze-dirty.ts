@@ -13,9 +13,9 @@ export function analyze_dirty(node: StillflowNode, dirty: DirtyContext): number 
         const mask = analyze_dirty(node.value, dirty)
 
         node.meta.analysis.dirty_mask = mask
+      } else {
+        node.meta.analysis.dirty_mask = 0
       }
-
-      node.meta.analysis.dirty_mask = 0
 
       return node.meta.analysis.dirty_mask
     }
