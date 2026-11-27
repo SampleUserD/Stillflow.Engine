@@ -1,3 +1,5 @@
+/// <reference type="stillflow.jsx.d.ts">
+
 import * as collections from './stillflow-collection/index.js'
 import * as core from './stillflow/index.js'
 import * as runtime from './stillflow-runtime/dom.js'

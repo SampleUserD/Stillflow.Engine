@@ -1,3 +1,5 @@
+import { DirtyContext } from "@/stillflow-vite/vm-compiler/dirty"
+
 type Brand<T, K extends string> = T & { readonly __brand: K }
 
 export type SlotId = Brand<number, 'SlotId'>
@@ -14,6 +16,7 @@ export interface ScopeMeta {
 
 export interface AnalysisMeta {
   has_child_chunks: boolean
+  dirty_mask: number
   is_dynamic: boolean
   slot?: SlotId
 }
@@ -35,6 +38,7 @@ export const create_empty_meta = (): BaseNodeMeta => {
     },
     analysis: {
       is_dynamic: false,
+      dirty_mask: 0,
       has_child_chunks: false
     }
   }
@@ -50,6 +54,8 @@ export interface ElementNode extends BaseStillflowNode<'Element'> {
   readonly static_properties: Record<string, string>
   readonly dynamic_properties: Record<string, ExpressionNode>
   readonly children: StillflowNode[]
+
+  dynamic_properties_mask: Record<string, number>
 }
 
 export interface TextNode extends BaseStillflowNode<'Text'> {
@@ -62,6 +68,8 @@ export interface ForNode extends BaseStillflowNode<'For'> {
   readonly item_name: string
   readonly index_name: string
   readonly body: StillflowNode[]
+
+  dirty_context: DirtyContext
 }
 
 export interface CallNode extends BaseStillflowNode<'Call'> {

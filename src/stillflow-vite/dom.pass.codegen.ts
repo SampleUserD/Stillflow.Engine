@@ -3,6 +3,25 @@ import { BytecodeBuilder, BytecodeChunk, Interner } from "@/stillflow-vite/vm-co
 import { ChunkId, InternId } from "@/stillflow-vite/vm-compiler/nodes"
 import { unpack_local } from "@/stillflow-vite/vm-abstract"
 
+export function emit_dirty_prologue(tracked_variables: readonly string[], source: (name: string, bit: number) => string): string[] {
+  if (tracked_variables.length === 0) {
+    return []
+  }
+
+  const lines: string[] = ['let __dirty = 0;']
+
+  for (let index = 0; index < tracked_variables.length; index++) {
+    const name = tracked_variables[index]
+    const bit = 1 << index
+
+    lines.push(source(name, bit))
+  }
+
+  lines.push('if (__dirty === 0) return;')
+
+  return lines
+}
+
 export interface GeneratedCode {
   module: string[]
   mount: string[]
@@ -57,6 +76,17 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
           break
         }
 
+        case Opcode.UPDATE_DYNAMIC_PROP: {
+          const slot = stream[pointer++]
+          const key = interner.get(stream[pointer++] as InternId)
+          const expression = interner.get(stream[pointer++] as InternId)
+          const property_mask = stream[pointer++]
+
+          lines.push(`if(__dirty & ${property_mask}) __s${slot}.${key} = ${expression};`)
+
+          break
+        }
+
         case Opcode.CREATE_STATIC_TEXT: {
           const text = interner.get(stream[pointer++] as InternId)
           const slot = stream[pointer++]
@@ -78,8 +108,9 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
         case Opcode.UPDATE_DYNAMIC_TEXT: {
           const expression = interner.get(stream[pointer++] as InternId)
           const slot = stream[pointer++]
+          const mask = stream[pointer++]
 
-          lines.push(`__s${slot}.data = ${expression};`)
+          lines.push(`if (__dirty & ${mask}) __s${slot}.data = ${expression};`)
 
           break
         }
@@ -106,6 +137,7 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
           const select_chunk_id = stream[pointer++] as ChunkId
           const container_slot = stream[pointer++]
           const root_item_slot = stream[pointer++]
+          stream[pointer++]
           const capture_count = stream[pointer++]
 
           const captures: string[] = []
@@ -164,6 +196,7 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
 
         case Opcode.PATCH_CALL: {
           const call_slot = stream[pointer++]
+          const call_mask = stream[pointer++]
           const properties_count = stream[pointer++]
 
           const property_pairs: string[] = []
@@ -175,7 +208,7 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
             property_pairs.push(`${JSON.stringify(key)}: ${expression}`)
           }
 
-          lines.push(`__s${call_slot}.patch({ ${property_pairs.join(', ')} }, $it)`)
+          lines.push(`if (__dirty & ${call_mask}) __s${call_slot}.patch({ ${property_pairs.join(', ')} }, $it)`)
 
           break
         }
@@ -191,6 +224,10 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
 
     const params = ['$parent', '$items', ...body_chunk.captures].join(', ')
 
+    const prologue = emit_dirty_prologue(body_chunk.captures, (name, bit) => {
+      return `if ($next !== undefined) { $it = $next; __dirty |= ${bit}; }`
+    })
+
     const capture_bindings =
       body_chunk.captures.length > 0
         ? `let ${body_chunk.captures.map(capture => `__cap_${capture} = ${capture}`).join(', ')};`
@@ -205,7 +242,7 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
           return {
             element: ${dom_ref(root_item_slot)},
             patch($next) {
-              $it = $next;
+              ${prologue.join('\n     ')}
               ${patch_body.join('\n     ')}
             }
           }
@@ -217,20 +254,29 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
   }
 
   function emit_component_function(target_chunk: BytecodeChunk, component_name: string, interner: Interner<string>) {
-    if (target_chunk.root_slot === undefined) {
-      throw new Error(`Component chunk #${target_chunk.id} (component ${component_name}) has no root DOM slot`)
+    if (target_chunk.root_slots.length > 1) {
+      throw new Error(`Chunk #${target_chunk.id} ("${component_name}") has multiple DOM roots`)
     }
+
+    const params = ['$parent', '$props', '$it']
+
+    const captures = target_chunk.captures.filter(name => params.includes(name) === false)
 
     const mount_body = emit_stream(target_chunk.mount, interner)
     const patch_body = emit_stream(target_chunk.patch, interner)
 
-    const has_properties = target_chunk.captures.length > 0
-    const properties_list = target_chunk.captures.join(', ')
+    const has_properties = captures.length > 0
+    const properties_list = captures.join(', ')
 
     const properties_init = has_properties ? `let { ${properties_list} } = $props;` : String()
-    const properties_update = has_properties ? `({ ${properties_list} } = $props);` : String()
 
-    const params = ['$parent', '$props', '$it']
+    const dirty_prologue = emit_dirty_prologue(target_chunk.captures, (name, bit) => {
+      if (params.includes(name)) {
+        return `if ($next !== undefined) { $it = $next; __dirty |= ${bit}; }`
+      } else {
+        return `if (${name} !== $props.${name}) { ${name} = $props.${name}; __dirty |= ${bit}; }`
+      }
+    })
 
     const code = `
       function __comp_${component_name}(${params.join(', ')}) {
@@ -238,15 +284,14 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
         ${mount_body.join('\n   ')}
 
         if ($parent !== null) {
-          $parent.appendChild(__s${target_chunk.root_slot});
+          $parent.appendChild(${dom_ref(target_chunk.root_slots[0])});
         }
 
         return {
-          element: ${dom_ref(target_chunk.root_slot)},
+          element: ${dom_ref(target_chunk.root_slots[0])},
           patch($props, $next) {
-            $it = $next;
-            ${properties_update}
-            ${patch_body.join('\n     ')}
+            ${dirty_prologue.join('\n      ')}
+            ${patch_body.join('\n      ')}
           }
         }
       }

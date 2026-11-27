@@ -5,6 +5,7 @@ export function analyze_tree(node: StillflowNode): AnalysisMeta {
     case 'Expression': {
       node.meta.analysis = {
         is_dynamic: true,
+        dirty_mask: 0,
         has_child_chunks: false
       }
 
@@ -14,6 +15,7 @@ export function analyze_tree(node: StillflowNode): AnalysisMeta {
     case 'Text': {
       node.meta.analysis = {
         is_dynamic: node.is_dynamic,
+        dirty_mask: 0,
         has_child_chunks: false
       }
 
@@ -29,6 +31,7 @@ export function analyze_tree(node: StillflowNode): AnalysisMeta {
 
       node.meta.analysis = {
         is_dynamic: has_dynamic_props || has_dynamic_child || has_child_chunks,
+        dirty_mask: 0,
         has_child_chunks
       }
 
@@ -44,6 +47,7 @@ export function analyze_tree(node: StillflowNode): AnalysisMeta {
 
       node.meta.analysis = {
         is_dynamic: true,
+        dirty_mask: 0,
         has_child_chunks: true
       }
 
@@ -53,6 +57,7 @@ export function analyze_tree(node: StillflowNode): AnalysisMeta {
     case 'Call': {
       node.meta.analysis = {
         is_dynamic: true,
+        dirty_mask: 0,
         has_child_chunks: true
       }
 

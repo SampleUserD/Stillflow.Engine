@@ -192,9 +192,7 @@ function BenchmarkApplicationTableRow(controller: BenchmarkApplicationController
   )
 }
 
-function BenchmarkApplicationTable(context: { controller: BenchmarkApplicationController }) {
-  const { controller } = context
-
+function BenchmarkApplicationTable(controller: BenchmarkApplicationController) {
   return (
     <table class="table table-hover table-striped test-data">
       <tbody>
@@ -206,9 +204,7 @@ function BenchmarkApplicationTable(context: { controller: BenchmarkApplicationCo
   )
 }
 
-function BenchmarkApplicationView(context: { controller: BenchmarkApplicationController }) {
-  const { controller } = context
-
+function BenchmarkApplicationView(controller: BenchmarkApplicationController) {
   return (
     <div id="app" class="container">
       <div class="jumbotron">
@@ -227,23 +223,16 @@ function BenchmarkApplicationView(context: { controller: BenchmarkApplicationCon
         </div>
       </div>
       <BenchmarkApplicationTable controller={controller} />
-      <span ariaHidden="true" className="preloadicon glyphicon glyphicon-remove" />
+      <span aria-hidden="true" class="preloadicon glyphicon glyphicon-remove" />
     </div>
   )
-}
-
-type ItemData = {
-  text: string
-  items: collections.Flushable<ItemData>
 }
 
 const controller = new BenchmarkApplicationController()
 
 const Fabric = $(<BenchmarkApplicationView controller={controller} />)
 
-const { app, root } = Fabric({})
+const patch = Fabric(document.body, {})
 
-document.body.appendChild(root)
-
-controller.core.on(() => app({}))
+controller.core.on(() => patch({}))
 controller.core.commit()

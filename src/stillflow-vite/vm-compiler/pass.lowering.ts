@@ -1,6 +1,6 @@
 import { TransformResult } from "@/stillflow-vite/dom.pass.transform"
 import { BytecodeBuilder } from "@/stillflow-vite/vm-compiler/bytecode-builder"
-import { SymbolScope, analyze_tree, resolve_scopes } from "@/stillflow-vite/vm-compiler"
+import { SymbolScope, analyze_dirty, analyze_tree, create_dirty_context, resolve_scopes } from "@/stillflow-vite/vm-compiler"
 import { SlotId, StillflowNode, as_slot } from "@/stillflow-vite/vm-compiler/nodes"
 import { Opcode } from "@/stillflow-vite/vm-compiler/codes"
 
@@ -15,7 +15,11 @@ export function lower_to_bytecode(transformed: TransformResult, scope: SymbolSco
   resolve_scopes(transformed.root, scope)
   analyze_tree(transformed.root)
 
-  const root_chunk = builder.compile_subtree([], () => lower_node(transformed.root, builder, undefined))
+  const root_dirty = create_dirty_context(['$it'])
+
+  analyze_dirty(transformed.root, root_dirty)
+
+  const root_chunk = builder.compile_subtree(root_dirty.tracked_variables, () => lower_node(transformed.root, builder, undefined))
 
   builder.root_chunk_id = root_chunk.id
 
@@ -30,13 +34,17 @@ export function lower_to_bytecode(transformed: TransformResult, scope: SymbolSco
     resolve_scopes(component.body, component_scope)
     analyze_tree(component.body)
 
-    builder.fill_chunk(component_chunk_id, component.params, () => lower_node(component.body, builder, undefined))
+    const dirty = create_dirty_context(['$it', ...component.params])
+
+    analyze_dirty(component.body, dirty)
+
+    builder.fill_chunk(component_chunk_id, dirty.tracked_variables, () => lower_node(component.body, builder, undefined))
   }
 
   return builder
 }
 
-function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: SlotId | undefined): SlotId | undefined {
+function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: SlotId | undefined): SlotId[] {
   switch (node.kind) {
     case 'Element': {
       const element_slot = builder.allocate_slot()
@@ -54,9 +62,13 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
       for (const [key, expression] of Object.entries(node.dynamic_properties)) {
         const key_id = builder.intern(key)
         const expression_id = builder.intern(expression.code)
+        const property_mask = node.dynamic_properties_mask[key]
 
         builder.emit_mount(Opcode.SET_DYNAMIC_PROP, element_slot, key_id, expression_id)
-        builder.emit_patch(Opcode.SET_DYNAMIC_PROP, element_slot, key_id, expression_id)
+
+        if (property_mask !== 0) {
+          builder.emit_patch(Opcode.UPDATE_DYNAMIC_PROP, element_slot, key_id, expression_id, property_mask)
+        }
       }
 
       if (parent_slot !== undefined) {
@@ -67,7 +79,7 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
         lower_node(child, builder, element_slot)
       }
 
-      return element_slot
+      return [element_slot]
     }
 
     case 'Text': {
@@ -77,9 +89,13 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
 
       if (typeof node.value !== 'string') {
         const expression_id = builder.intern(node.value.code)
+        const text_mask = node.meta.analysis.dirty_mask
 
         builder.emit_mount(Opcode.CREATE_DYNAMIC_TEXT, expression_id, text_slot)
-        builder.emit_patch(Opcode.UPDATE_DYNAMIC_TEXT, expression_id, text_slot)
+
+        if (text_mask !== 0) {
+          builder.emit_patch(Opcode.UPDATE_DYNAMIC_TEXT, expression_id, text_slot, text_mask)
+        }
       } else {
         const string_id = builder.intern(node.value)
 
@@ -90,7 +106,7 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
         builder.emit_mount(Opcode.APPEND, parent_slot, text_slot)
       }
 
-      return text_slot
+      return [text_slot]
     }
 
     case 'For': {
@@ -98,27 +114,37 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
         throw new Error(`"For"-node must have a parent container "Element"-node`)
       }
 
-      const captures = Array.from(node.meta.scope.captures)
+      const captures = node.dirty_context.tracked_variables
 
       const select_chunk = builder.with_chunk(captures, () => builder.emit_mount(Opcode.READ_EXPRESSION, builder.intern(node.select.code)))
 
       const body_chunk = builder.compile_subtree(captures, () => lower_node(node.body[0], builder, undefined))
 
-      const root_item_slot = body_chunk.root_slot!
+      if (body_chunk.root_slots.length > 1) {
+        throw new Error(`For-node should not contain more than one child`)
+      }
+
+      const root_item_slot = body_chunk.root_slots[0]
 
       const capture_ids = captures.map(name => builder.intern(name))
+
+      const for_mask = node.meta.analysis.dirty_mask
 
       const instructions = [
         body_chunk.id,
         select_chunk.id,
         parent_slot,
         root_item_slot,
+        for_mask,
         capture_ids.length,
         ...capture_ids
       ]
 
       builder.emit_mount(Opcode.FOR, ...instructions)
-      builder.emit_patch(Opcode.FOR, ...instructions)
+
+      if (for_mask !== 0) {
+        builder.emit_patch(Opcode.FOR, ...instructions)
+      }
 
       return undefined
     }
@@ -151,14 +177,19 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
         ...encoded_properties
       )
 
-      builder.emit_patch(
-        Opcode.PATCH_CALL,
-        call_slot,
-        property_entries.length,
-        ...encoded_properties
-      )
+      const call_mask = node.meta.analysis.dirty_mask
 
-      return call_slot
+      if (call_mask !== 0) {
+        builder.emit_patch(
+          Opcode.PATCH_CALL,
+          call_slot,
+          call_mask,
+          property_entries.length,
+          ...encoded_properties
+        )
+      }
+
+      return [call_slot]
     }
   }
 }

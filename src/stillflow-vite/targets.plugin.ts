@@ -119,7 +119,7 @@ export default function StillflowTargets({ node_module, path, babel, fs, parser 
 
                 const functional_module = types.functionExpression(
                   null,
-                  [types.identifier('$it')],
+                  [types.identifier('$parent'), types.identifier('$it')],
                   types.blockStatement(program.body)
                 )
 

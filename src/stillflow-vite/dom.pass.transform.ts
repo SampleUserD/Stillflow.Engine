@@ -97,6 +97,10 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
     return null
   }
 
+  function transform_if(_: Record<string, string>, dynamics: Record<string, ExpressionNode>, children: StillflowNode[]) {
+
+  }
+
   function transform_for(_: Record<string, string>, dynamics: Record<string, ExpressionNode>, children: StillflowNode[]): ForNode {
     if ('select' in dynamics === false) {
       throw new Error(`For expression should contain select attribute`)

@@ -16,6 +16,7 @@ export class Fabric {
       tag,
       static_properties,
       dynamic_properties,
+      dynamic_properties_mask: {},
       children,
       meta: create_empty_meta()
     }
@@ -37,7 +38,11 @@ export class Fabric {
       index_name,
       item_name,
       body,
-      meta: create_empty_meta()
+      meta: create_empty_meta(),
+      dirty_context: {
+        tracked_variables: [],
+        variable_masks: new Map()
+      }
     }
   }
 

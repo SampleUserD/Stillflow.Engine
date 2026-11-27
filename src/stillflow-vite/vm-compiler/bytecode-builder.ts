@@ -1,4 +1,3 @@
-import { pack_opcode } from "@/stillflow-vite/vm-abstract"
 import { Opcode } from "@/stillflow-vite/vm-compiler/codes"
 import { ChunkId, InternId, SlotId, as_chunk, as_intern, as_slot } from "@/stillflow-vite/vm-compiler/nodes"
 
@@ -8,7 +7,7 @@ export interface BytecodeChunk {
   readonly patch: number[]
   readonly captures: readonly string[]
 
-  root_slot?: SlotId
+  root_slots: SlotId[]
 }
 
 export class Interner<T> {
@@ -52,7 +51,7 @@ export class BytecodeBuilder {
   public allocate_chunk(): ChunkId {
     const id = as_chunk(this.chunks.length)
 
-    this.chunks.push({ id, mount: [], patch: [], captures: [] }) - 1
+    this.chunks.push({ id, mount: [], patch: [], captures: [], root_slots: [] })
 
     return id
   }
@@ -80,6 +79,7 @@ export class BytecodeBuilder {
   public with_chunk(captures: readonly string[], site: () => void): BytecodeChunk {
     const chunk: BytecodeChunk = {
       id: as_chunk(this.chunks.length),
+      root_slots: [],
       mount: [],
       patch: [],
       captures
@@ -96,7 +96,7 @@ export class BytecodeBuilder {
     return chunk
   }
 
-  public fill_chunk(id: ChunkId, captures: readonly string[], site: () => SlotId | undefined): BytecodeChunk {
+  public fill_chunk(id: ChunkId, captures: readonly string[], site: () => SlotId[]): BytecodeChunk {
     const chunk = this.chunks[id]
 
     if (chunk === undefined) {
@@ -108,15 +108,16 @@ export class BytecodeBuilder {
     const previous = this._active
 
     this._active = chunk
-    chunk.root_slot = site()
+    chunk.root_slots = site()
     this._active = previous
 
     return chunk
   }
 
-  public compile_subtree(captures: readonly string[], emit_root: () => SlotId | undefined): BytecodeChunk {
+  public compile_subtree(captures: readonly string[], emit_root: () => SlotId[]): BytecodeChunk {
     const chunk: BytecodeChunk = {
       id: as_chunk(this.chunks.length),
+      root_slots: [],
       mount: [],
       patch: [],
       captures,
@@ -127,7 +128,7 @@ export class BytecodeBuilder {
     this.chunks.push(chunk)
 
     this._active = chunk
-    chunk.root_slot = emit_root()
+    chunk.root_slots = emit_root()
     this._active = previous
 
     return chunk
