@@ -178,13 +178,13 @@ function BenchmarkApplicationTableRow(controller: BenchmarkApplicationController
         {$it.id}
       </td>
       <td class="col-md-4">
-        <a onclick={() => controller.select($it.index)}>
+        <a sf: click={[() => controller.select($it.index), $it] as const}>
           {$it.label}
         </a>
       </td>
       <td class="col-md-1">
-        <a onclick={() => controller.remove($it.index)}>
-          <span ariaHidden="true" class="glyphicon glyphicon-remove" />
+        <a sf: click={[() => controller.remove($it.index), $it]}>
+          <span aria-hidden="true" class="glyphicon glyphicon-remove" />
         </a>
       </td>
       <td class="col-md-6" />

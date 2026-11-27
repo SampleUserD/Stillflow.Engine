@@ -65,6 +65,16 @@ export function resolve_scopes(node: StillflowNode, scope: SymbolScope): Set<str
         }
       }
 
+      for (const { handler, data } of Object.values(node.delegated_events)) {
+        for (const capture of resolve_scopes(handler, scope)) {
+          captures.add(capture)
+        }
+
+        for (const capture of resolve_scopes(data, scope)) {
+          captures.add(capture)
+        }
+      }
+
       for (const child of node.children) {
         for (const capture of resolve_scopes(child, scope)) {
           captures.add(capture)

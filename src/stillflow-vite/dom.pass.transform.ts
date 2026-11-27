@@ -1,5 +1,5 @@
 import { Fabric } from "@/stillflow-vite/vm-compiler/fabric"
-import { ExpressionNode, ForNode, StillflowNode, TextNode } from "@/stillflow-vite/vm-compiler/nodes"
+import { DelegatedEvent, ExpressionNode, ForNode, StillflowNode, TextNode } from "@/stillflow-vite/vm-compiler/nodes"
 import { Component } from "@/stillflow-vite/vm-abstract/vm.target"
 import { types, generate, traverse } from "@babel/core"
 
@@ -37,7 +37,7 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
 
   function get_name(name: types.JSXNamespacedName | types.JSXIdentifier | types.JSXMemberExpression): string {
     if (types.isJSXNamespacedName(name)) {
-      return `${name.namespace}:${name.name}`
+      return `${name.namespace.name}:${name.name.name}`
     }
 
     if (types.isJSXIdentifier(name)) {
@@ -47,6 +47,14 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
     if (types.isJSXMemberExpression(name)) {
       return `${get_name(name.object)}.${name.property}`
     }
+  }
+
+  function unwrap_ts_types(node: types.Expression): types.Expression {
+    while (types.isTSAsExpression(node) || types.isTSSatisfiesExpression(node) || types.isTSTypeAssertion(node) || types.isTSNonNullExpression(node)) {
+      node = node.expression
+    }
+
+    return node
   }
 
   function visit(node: types.Node, env: Record<string, ExpressionNode> = {}): StillflowNode | null {
@@ -61,13 +69,9 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
     throw new Error(`Undefined node ${node.type} at ${node.loc.filename} ${node.loc.start.line}:${node.loc.start.column}`)
   }
 
-  function transform_expression(node: types.JSXExpressionContainer, env: Record<string, ExpressionNode>): ExpressionNode {
+  function transform_expression_node(node: types.Expression, env: Record<string, ExpressionNode>): ExpressionNode {
     const refs = new Set<string>()
-    const expression = node.expression
-
-    if (types.isJSXEmptyExpression(expression)) {
-      throw new Error(`We do not support JSX empty expressions at ${expression.loc.filename} ${expression.loc.start.line}:${expression.loc.start.column}`)
-    }
+    const expression = node
 
     const wrapper = types.file(
       types.program([
@@ -101,9 +105,19 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
       }
     })
 
-    let code = generate(expression).code
+    let code = generate(unwrap_ts_types(expression)).code
 
     return Fabric.expression(code, Array.from(refs))
+  }
+
+  function transform_expression(node: types.JSXExpressionContainer, env: Record<string, ExpressionNode>): ExpressionNode {
+    const expression = node.expression
+
+    if (types.isJSXEmptyExpression(expression)) {
+      throw new Error(`We do not support JSX empty expressions at ${expression.loc.filename} ${expression.loc.start.line}:${expression.loc.start.column}`)
+    }
+
+    return transform_expression_node(expression, env)
   }
 
   function transform_text(node: types.JSXText | types.JSXExpressionContainer, env: Record<string, ExpressionNode>): TextNode {
@@ -143,6 +157,7 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
   function transform_element(node: types.JSXElement, env: Record<string, ExpressionNode>): StillflowNode {
     const statics: Record<string, string> = {}
     const dynamics: Record<string, ExpressionNode> = {}
+    const events: Record<string, DelegatedEvent> = {}
     const children: StillflowNode[] = []
 
     const tag = get_name(node.openingElement.name)
@@ -165,7 +180,29 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
       }
 
       if (types.isJSXExpressionContainer(value)) {
-        dynamics[map_dynamic_property(name)] = transform_expression(value, env)
+        if (types.isJSXEmptyExpression(value.expression)) {
+          throw new Error(`We don't support JSX empty expressions at ${value.expression.loc.filename} ${value.expression.loc.start.line}:${value.expression.loc.start.column}`)
+        }
+
+        if (name.startsWith('sf:')) {
+          const event_name = name.slice('sf:'.length)
+          const expression = unwrap_ts_types(value.expression)
+
+          if (!types.isArrayExpression(expression)) {
+            throw new Error(`In sf.${event_name} expected array expression at ${expression.loc.filename} ${expression.loc.start.line}:${expression.loc.start.column}`)
+          }
+
+          if (types.isSpreadElement(expression.elements[0]) || types.isSpreadElement(expression.elements[1])) {
+            throw new Error(`We don not support spread elements in tuple sf.${event_name} at ${expression.loc.filename} ${expression.loc.start.line}:${expression.loc.start.column}`)
+          }
+
+          events[event_name] = {
+            handler: transform_expression_node(expression.elements[0], env),
+            data: transform_expression_node(expression.elements[1], env)
+          }
+        } else {
+          dynamics[map_dynamic_property(name)] = transform_expression(value, env)
+        }
       }
 
       if (types.isJSXElement(value) || types.isJSXFragment(value)) {
@@ -189,7 +226,7 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
       return Fabric.call(tag, dynamics)
     }
 
-    return Fabric.element(tag, statics, dynamics, children)
+    return Fabric.element(tag, statics, dynamics, children, events)
   }
 
   const root = visit(node)!

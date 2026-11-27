@@ -1,5 +1,4 @@
-import { DELEGATOR } from "@/index";
-import { FlushableCollection } from "@/stillflow-collection/flushable";
+import { FlushableCollection } from "@/stillflow-collection/flushable"
 
 // @stillflow/runtime/list.ts
 export interface ListItemController<T> {
@@ -14,7 +13,6 @@ export function reconcile_list<T>(root: Element & { sf_elements?: ListItemContro
 
   if (!controllers) {
     controllers = root.sf_elements = [];
-    DELEGATOR.register_collection(items);
   }
 
   // 1. Полная замена (replaces)

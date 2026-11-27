@@ -20,9 +20,17 @@ declare global {
       | keyof IntrinsicElements
       | AnyFunction
 
+    type TypicalEventHandler<E extends Event> = (event: E) => void
+
+    type SFEventHandler<E extends Event, T = any> = readonly [(event: E, data: T) => void, T]
+
+    type SFEventProperties = Partial<{
+      [K in keyof GlobalEventHandlersEventMap as `sf:${K}`]: SFEventHandler<GlobalEventHandlersEventMap[K]>
+    }>
+
     type LibraryManagedAttributes<C, P> = C extends AnyFunction ? Record<string, any> : P
 
-    type ElementProps<T extends HTMLElement> = BasePropertiesWithout<T, 'className' | 'children'> & AdditionalProperties
+    type ElementProps<T extends HTMLElement> = BasePropertiesWithout<T, 'className' | 'children'> & AdditionalProperties & SFEventProperties
 
     type HTMLTags = { [K in keyof HTMLElementTagNameMap]: ElementProps<HTMLElementTagNameMap[K]> }
 

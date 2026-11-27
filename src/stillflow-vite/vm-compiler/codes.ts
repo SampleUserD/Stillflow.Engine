@@ -12,6 +12,8 @@ export const enum Opcode {
   MOUNT_CALL,
   PATCH_CALL,
   CREATE_ANCHOR,
-  IF
+  IF,
+  SET_EVENT,
+  UPDATE_EVENT_DATA
 }
 

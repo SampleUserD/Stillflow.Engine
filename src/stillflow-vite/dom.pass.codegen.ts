@@ -212,6 +212,30 @@ export function generate_dom(builder: BytecodeBuilder): GeneratedCode {
 
           break
         }
+
+        case Opcode.SET_EVENT: {
+          const slot = stream[pointer++]
+          const key = interner.get(stream[pointer++] as InternId)
+          const handler = interner.get(stream[pointer++] as InternId)
+          const data = interner.get(stream[pointer++] as InternId)
+
+          lines.push(`${dom_ref(slot)}.$$${key} = ${handler};`)
+          lines.push(`${dom_ref(slot)}.$$${key}_data = ${data};`)
+          lines.push(`delegate_event(${JSON.stringify(key)})`)
+
+          break
+        }
+
+        case Opcode.UPDATE_EVENT_DATA: {
+          const slot = stream[pointer++]
+          const key = interner.get(stream[pointer++] as InternId)
+          const data = interner.get(stream[pointer++] as InternId)
+          const data_mask = stream[pointer++]
+
+          lines.push(`if(__dirty & ${data_mask}) { ${dom_ref(slot)}.$$${key}_data = ${data}; }`)
+
+          break
+        }
       }
     }
 

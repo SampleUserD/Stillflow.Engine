@@ -71,6 +71,19 @@ function lower_node(node: StillflowNode, builder: BytecodeBuilder, parent_slot: 
         }
       }
 
+      for (const [key, { handler, data }] of Object.entries(node.delegated_events)) {
+        const key_id = builder.intern(key)
+        const data_id = builder.intern(data.code)
+        const handler_id = builder.intern(handler.code)
+        const property_mask = node.delegated_events_mask[key]
+
+        builder.emit_mount(Opcode.SET_EVENT, element_slot, key_id, handler_id, data_id)
+
+        if (data_id !== 0 || handler_id !== 0) {
+          builder.emit_patch(Opcode.UPDATE_EVENT_DATA, element_slot, key_id, data_id, property_mask.data)
+        }
+      }
+
       if (parent_slot !== undefined) {
         builder.emit_mount(Opcode.APPEND, parent_slot, element_slot)
       }

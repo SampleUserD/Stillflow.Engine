@@ -10,6 +10,11 @@ export const as_slot = (n: number) => n as SlotId
 export const as_chunk = (n: number) => n as ChunkId
 export const as_intern = (n: number) => n as InternId
 
+export interface DelegatedEvent {
+  readonly handler: ExpressionNode
+  readonly data: ExpressionNode
+}
+
 export interface ScopeMeta {
   captures: Set<string>
 }
@@ -55,6 +60,8 @@ export interface ElementNode extends BaseStillflowNode<'Element'> {
   readonly dynamic_properties: Record<string, ExpressionNode>
   readonly children: StillflowNode[]
 
+  delegated_events: Record<string, DelegatedEvent>
+  delegated_events_mask: Record<string, { handler: number, data: number }>
   dynamic_properties_mask: Record<string, number>
 }
 

@@ -30,6 +30,18 @@ export function analyze_dirty(node: StillflowNode, dirty: DirtyContext): number 
         dirty_mask |= property_mask
       }
 
+      for (const [key, { handler, data }] of Object.entries(node.delegated_events)) {
+        const handler_mask = analyze_dirty(handler, dirty)
+        const data_mask = analyze_dirty(data, dirty)
+
+        node.delegated_events_mask[key] = {
+          handler: handler_mask,
+          data: data_mask
+        }
+
+        dirty_mask |= handler_mask | data_mask
+      }
+
       for (const child of node.children) {
         dirty_mask |= analyze_dirty(child, dirty)
       }

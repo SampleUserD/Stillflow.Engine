@@ -56,6 +56,10 @@ export const target_dom: Target = {
           types.importSpecifier(
             types.identifier('reconcile_list'),
             types.identifier('reconcile_list')
+          ),
+          types.importSpecifier(
+            types.identifier('delegate_event'),
+            types.identifier('delegate_event')
           )
         ],
           types.stringLiteral('stillflow.engine')
