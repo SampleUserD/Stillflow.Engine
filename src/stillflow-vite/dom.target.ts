@@ -1,5 +1,5 @@
 import { transform } from "@/stillflow-vite/dom.pass.transform"
-import { analyze_tree, lower_to_bytecode, resolve_scopes, SymbolScope } from "@/stillflow-vite/vm-compiler"
+import { lower_to_bytecode, SymbolScope } from "@/stillflow-vite/vm-compiler"
 import { generate_dom } from "@/stillflow-vite/dom.pass.codegen"
 
 import { Target } from "@/stillflow-vite/vm-abstract"

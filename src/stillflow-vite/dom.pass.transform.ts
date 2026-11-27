@@ -18,6 +18,17 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
   const RESERVED: Record<string, (statics: Record<string, string>, dynamics: Record<string, ExpressionNode>, children: StillflowNode[]) => StillflowNode> = {
     'for': transform_for
   }
+  const DYNAMIC_TABLE: Record<string, string> = {
+    'class': 'className'
+  }
+
+  function map_dynamic_property(name: string): string {
+    if (name in DYNAMIC_TABLE) {
+      return DYNAMIC_TABLE[name]
+    }
+
+    return name
+  }
 
   function get_name(name: types.JSXNamespacedName | types.JSXIdentifier | types.JSXMemberExpression): string {
     if (types.isJSXNamespacedName(name)) {
@@ -125,7 +136,7 @@ export function transform(node: types.Node, raw_components: Map<string, Componen
       }
 
       if (types.isJSXExpressionContainer(value)) {
-        dynamics[name] = transform_expression(value, env)
+        dynamics[map_dynamic_property(name)] = transform_expression(value, env)
       }
 
       if (types.isJSXElement(value) || types.isJSXFragment(value)) {
